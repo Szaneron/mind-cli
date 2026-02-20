@@ -11,7 +11,6 @@ git clone https://github.com/Szaneron/mind-cli.git
 cd mind-cli
 ```
 
-
 ### 2. Configure environment variables
 
 Copy `mind/config/.env_template` to `mind/config/.env` and fill in your credentials:
@@ -32,6 +31,7 @@ CLOCKIFY_REPORTS_API_URL=https://reports.api.clockify.me
 CLOCKIFY_REPORT_SAVE_PATH=/Users/
 CLOCKIFY_REPORT_BASE_NAME=your_report_name
 
+# Other
 TASK_PROVIDER=jira
 ```
 
@@ -84,14 +84,6 @@ mind hours 11
 mind --help
 mind log --help
 mind show --help
-```
-
-## Development
-
-### Install dev dependencies
-
-```bash
-pip3 install -e ."
 ```
 
 ## Requirements
