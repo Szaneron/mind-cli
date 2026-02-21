@@ -40,14 +40,21 @@ def log(issue_key: str | None, time_period: str | None, date: dt_date | None) ->
     TIME_PERIOD: Time range (e.g., 9-17 or 9:30-12:45)
     DATE: Optional date (e.g., 15.11), defaults to today
     """
-    # If only one positional arg was given and it looks like a time period, treat it as such
-    if (
-        issue_key is not None
-        and time_period is None
-        and _TIME_PERIOD_PATTERN.match(issue_key)
-    ):
+    # Shifting logic: if first arg looks like a time period (not an issue key), shift arguments.
+    # The `date` callback already ran and set date=today when not provided, so we must not
+    # overwrite it with None — only replace it when time_period holds an actual date string.
+    if issue_key is not None and _TIME_PERIOD_PATTERN.match(issue_key):
+        if time_period is not None and re.match(
+            r"^\d{1,2}(\.\d{1,2}(\.\d{4})?)?$", time_period
+        ):
+            # Second arg looks like a date string — parse it and use as date
+            try:
+                date = validate_date(None, None, time_period)
+            except click.BadParameter:
+                pass  # Leave date as-is (already today from callback)
         time_period = issue_key
         issue_key = None
+        # date already holds the correct value: either today (from callback) or the parsed date above
 
     # Auto-detect issue key from Git branch when not provided
     if issue_key is None:
