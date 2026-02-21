@@ -47,11 +47,8 @@ def log(issue_key: str | None, time_period: str | None, date: dt_date | None) ->
         if time_period is not None and re.match(
             r"^\d{1,2}(\.\d{1,2}(\.\d{4})?)?$", time_period
         ):
-            # Second arg looks like a date string — parse it and use as date
-            try:
-                date = validate_date(None, None, time_period)
-            except click.BadParameter:
-                pass  # Leave date as-is (already today from callback)
+            # Second arg looks like a date string — parse it and use as date (raise on invalid)
+            date = validate_date(None, None, time_period)
         time_period = issue_key
         issue_key = None
         # date already holds the correct value: either today (from callback) or the parsed date above

@@ -48,16 +48,13 @@ class TimeLogService:
             self.console.print(
                 f"🕒 {date.strftime('%d-%m-%Y')} | {start_time} – {end_time}"
             )
-        except Exception as e:
-            if (
-                isinstance(e, httpx.HTTPStatusError)
-                and getattr(e.response, "status_code", None) == 404
-            ):
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
                 self.console.print(f"[red]❌ Task {issue_key} not found in Jira.[/red]")
-            elif isinstance(e, httpx.HTTPStatusError):
-                self.console.print(f"[red]❌ Jira error: {e}[/red]")
             else:
-                self.console.print(f"[red]❌ Error logging time: {e}[/red]")
+                self.console.print(f"[red]❌ Jira error: {e}[/red]")
+        except Exception as e:
+            self.console.print(f"[red]❌ Error logging time: {e}[/red]")
 
     def _parse_time_period(self, time_period: str) -> tuple[str, str]:
         """Parse time period string (e.g. '9-17' or '9:30-12:45') into (HH:MM, HH:MM)."""
