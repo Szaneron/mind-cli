@@ -1,7 +1,11 @@
 # Common utilities: date parsing and timezone helpers
 from datetime import date as dt_date
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
+
+import holidays
+
+from mind.config.settings import WORKING_HOURS_PER_DAY
 
 WARSAW_TZ = ZoneInfo("Europe/Warsaw")
 
@@ -58,6 +62,31 @@ def parse_day_and_month(date_string: str | None) -> dt_date:
     except Exception:
         raise ValueError(f"Invalid date format: '{date_string}'")
     raise ValueError(f"Invalid date format: '{date_string}'")
+
+
+def max_working_hours_in_month(
+    year: int,
+    month: int,
+    country: str = "PL",
+) -> int:
+    """
+    Calculate the maximum possible working hours in a month,
+    excluding weekends and public holidays.
+    """
+    pl_holidays = holidays.country_holidays(country, years=[year])
+    first = dt_date(year, month, 1)
+    last = (
+        dt_date(year, month + 1, 1) - timedelta(days=1)
+        if month < 12
+        else dt_date(year + 1, 1, 1) - timedelta(days=1)
+    )
+    working_days = sum(
+        1
+        for d in range((last - first).days + 1)
+        if (first + timedelta(days=d)) not in pl_holidays
+        and (first + timedelta(days=d)).weekday() < 5
+    )
+    return working_days * WORKING_HOURS_PER_DAY
 
 
 def sum_entry_durations(entries: list[dict]) -> int:

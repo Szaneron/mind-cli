@@ -78,12 +78,28 @@ mind hours
 mind hours 11
 ```
 
+### Download reports
+
+```bash
+# Download PDF report for the current month
+mind download report
+
+# Download PDF report for a specific month
+mind download report 1
+```
+
 ### Help
 
 ```bash
+# Show general help
 mind --help
+
+# Show help for specific commands
 mind log --help
 mind show --help
+mind hours --help
+mind download --help
+mind download report --help
 ```
 
 ## Requirements
