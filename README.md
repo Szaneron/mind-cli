@@ -33,6 +33,7 @@ CLOCKIFY_REPORT_BASE_NAME=your_report_name
 
 # Other
 TASK_PROVIDER=jira
+PROJECT_KEY=PROJ
 ```
 
 ### 3. Install as a package (available globally in any terminal)
@@ -50,12 +51,20 @@ After installation, the `mind` command will be available **in any terminal** (VS
 
 ### Time logging
 
+You can log time by providing an explicit Jira issue key, or let Mind CLI automatically detect the issue key from your current Git branch name (e.g. `PROJ-123-feature` → `PROJ-123`).
+
 ```bash
 # Log time for PROJ-123 from 9:00 to 17:00 (today)
 mind log PROJ-123 9-17
 
 # Log time on a specific date
 mind log PROJ-123 9:30-12:45 15.11
+
+# Log time using issue key auto-detected from current Git branch (e.g. PEG-123-add-favorites)
+mind log 9-17
+
+# You can still override the detected key by providing one explicitly:
+mind log PROJ-456 9-17
 ```
 
 ### Display entries

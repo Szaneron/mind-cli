@@ -1,4 +1,6 @@
 # Common utilities: date parsing and timezone helpers
+import re
+import subprocess
 from datetime import date as dt_date
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
@@ -108,3 +110,26 @@ def sum_entry_durations(entries: list[dict]) -> int:
         except (TypeError, ValueError):
             continue
     return total
+
+
+def get_branch_issue_key() -> str | None:
+    """
+    Detect a Jira issue key from the current Git branch name.
+    Returns the issue key (e.g., 'PROJ-123') or None if not found.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode != 0:
+            return None
+        branch = result.stdout.strip()
+        match = re.search(r"([A-Z][A-Z0-9]*-\d+)", branch, re.IGNORECASE)
+        if match:
+            return match.group(1).upper()
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    return None

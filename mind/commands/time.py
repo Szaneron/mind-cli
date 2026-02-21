@@ -7,6 +7,7 @@ Includes:
 - hours: Monthly hours summary
 """
 
+import re
 from datetime import date as dt_date
 
 import click
@@ -17,25 +18,65 @@ from mind.commands.validation import (
     validate_month,
     validate_time_period,
 )
+from mind.common.utils import get_branch_issue_key
 from mind.services.time_commands import (
     TimeHoursService,
     TimeLogService,
     TimeShowService,
 )
 
+_TIME_PERIOD_PATTERN = re.compile(r"^\d{1,2}(:\d{2})?-\d{1,2}(:\d{2})?$")
+
 
 @click.command()
-@click.argument("issue_key", callback=validate_issue_key)
-@click.argument("time_period", callback=validate_time_period)
+@click.argument("issue_key", required=False, default=None)
+@click.argument("time_period", required=False, default=None)
 @click.argument("date", required=False, callback=validate_date)
-def log(issue_key: str, time_period: str, date: dt_date | None) -> None:
+def log(issue_key: str | None, time_period: str | None, date: dt_date | None) -> None:
     """
     Log time to Clockify.
 
-    ISSUE_KEY: Jira issue key (e.g., PROJ-123)
+    ISSUE_KEY: Jira issue key (e.g., PROJ-123) — auto-detected from Git branch if omitted
     TIME_PERIOD: Time range (e.g., 9-17 or 9:30-12:45)
     DATE: Optional date (e.g., 15.11), defaults to today
     """
+    # If only one positional arg was given and it looks like a time period, treat it as such
+    if (
+        issue_key is not None
+        and time_period is None
+        and _TIME_PERIOD_PATTERN.match(issue_key)
+    ):
+        time_period = issue_key
+        issue_key = None
+
+    # Auto-detect issue key from Git branch when not provided
+    if issue_key is None:
+        issue_key = get_branch_issue_key()
+        if issue_key is None:
+            raise click.UsageError(
+                click.style(
+                    "❌ No issue key provided and could not detect one from the current Git branch.",
+                    fg="red",
+                )
+            )
+        click.echo(
+            click.style(
+                f"🧠 Logging time using issue key from branch: {issue_key}", fg="cyan"
+            )
+        )
+
+    # Validate the issue key (raises BadParameter on invalid format)
+    issue_key = validate_issue_key(None, None, issue_key)
+
+    # Validate the time period
+    if time_period is None:
+        raise click.UsageError(
+            click.style(
+                "❌ TIME_PERIOD is required (e.g., 9-17 or 9:30-12:45).", fg="red"
+            )
+        )
+    time_period = validate_time_period(None, None, time_period)
+
     TimeLogService().log_time(issue_key, time_period, date)
 
 
