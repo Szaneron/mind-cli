@@ -3,6 +3,13 @@ import click
 from mind.commands.validation import validate_month
 from mind.services.download_commands import DownloadReportService
 
+"""
+Commands for downloading reports from Clockify.
+
+Includes:
+- download report: Download monthly PDF report
+"""
+
 
 @click.group()
 def download():

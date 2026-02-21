@@ -1,12 +1,3 @@
-"""
-Commands related to time logging (Clockify/Jira).
-
-Includes:
-- log: Log time to Clockify
-- show: Display logged entries
-- hours: Monthly hours summary
-"""
-
 from datetime import date as dt_date
 
 import click
@@ -22,6 +13,15 @@ from mind.services.time_commands import (
     TimeLogService,
     TimeShowService,
 )
+
+"""
+Commands related to time logging (Clockify/Jira).
+
+Includes:
+- log: Log time to Clockify
+- show: Display logged entries
+- hours: Monthly hours summary
+"""
 
 
 @click.command()
