@@ -37,32 +37,43 @@ class TimeShowService:
         """
         Fetch time entries from Clockify for the given date.
         """
-        user_id = self.clockify.get_user_id()
         start, end = day_range_utc(date)
-        return self.clockify.get_time_entries(user_id, start, end)
+        return self.clockify.get_time_entries(start, end)
 
     def _print_entries(self, entries: list[dict], date: dt_date) -> None:
         """
         Print formatted time entries for the given date.
         """
+        day_name = date.strftime("%A")
         date_str = date.strftime("%d.%m.%Y")
         if not entries:
             self.console.print(
-                f"🕒 [yellow]No time entries logged for[/yellow] {date_str}"
+                f"🕒 [yellow]No time entries logged for[/yellow] [blue]{day_name}[/blue] {date_str}"
             )
             return
 
         total_seconds = sum_entry_durations(entries)
         hours = total_seconds // 3600
         minutes = (total_seconds % 3600) // 60
-        summary = f" [blue](logged {hours}h {minutes}m)[/blue]" if total_seconds else ""
-        self.console.print(f"🕒 [bold]Time entries on {date_str}{summary}:[/bold]")
+        summary = self._get_colored_summary(hours, minutes) if total_seconds else ""
+        self.console.print(
+            f"🕒 [bold]Time entries on [blue]{day_name}[/blue] {date_str}{summary}:[/bold]"
+        )
 
         for entry in entries:
             try:
                 self.console.print(self._format_entry(entry))
             except Exception as e:
                 self.console.print(f"[red]❌ Error formatting entry: {e}[/red]")
+
+    def _get_colored_summary(self, hours: int, minutes: int) -> str:
+        """
+        Get colored summary of logged hours with conditional coloring.
+        Green if >= 8h, yellow if < 8h.
+        """
+        total_hours = hours + (minutes / 60)
+        color = "green" if total_hours >= 8 else "yellow"
+        return f" (logged [{color}]{hours}h {minutes}m[/{color}])"
 
     def _format_entry(self, entry: dict) -> str:
         """

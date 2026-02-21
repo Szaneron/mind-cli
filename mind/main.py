@@ -1,7 +1,7 @@
 import click
 
 from mind import __app_name__, __version__
-from mind.commands import time
+from mind.commands import download, time
 
 
 @click.group()
@@ -20,6 +20,7 @@ def cli(ctx: click.Context) -> None:
 cli.add_command(time.log)
 cli.add_command(time.show)
 cli.add_command(time.hours)
+cli.add_command(download.download)
 
 
 if __name__ == "__main__":
