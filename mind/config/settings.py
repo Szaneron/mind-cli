@@ -9,7 +9,7 @@ load_dotenv()
 WORKING_HOURS_PER_DAY = 8
 TIMEZONE = "Europe/Warsaw"
 FAVORITES_PATH = pathlib.Path(str(pathlib.Path.home() / ".mind-cli" / "favorites.json"))
-
+PROJECT_KEY = os.getenv("PROJECT_KEY", "")
 
 # Jira Configuration
 JIRA_BASE_URL = os.getenv("JIRA_BASE_URL", "")
