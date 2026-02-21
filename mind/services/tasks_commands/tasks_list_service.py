@@ -22,7 +22,7 @@ class TasksListService:
         Fetch and display Jira issues assigned to the current user.
 
         Args:
-            active_only: If True, shows only in-progress tasks.
+            active_only: If True, shows only tasks with status "In Progress" or "Code Review".
             project: Optional project key to filter (e.g. 'PEG').
         """
         try:
@@ -76,7 +76,5 @@ class TasksListService:
         for idx, s in enumerate(status_order):
             if status == s:
                 return idx
-        # ON HOLD always last
-        if status == "ON HOLD":
-            return len(status_order)
-        return len(status_order) - 1 if status == "TO DO" else len(status_order) - 2
+
+        return len(status_order)

@@ -86,18 +86,20 @@ class JiraAPI:
         return description, labels
 
     def get_assigned_issues(
-        self, active_only: bool = False, project: str = PROJECT_KEY
+        self, active_only: bool = False, project: str | None = None
     ) -> list[dict]:
         """
         Fetch open Jira issues assigned to the current user.
 
         Args:
-            active_only: If True, returns only issues with status "In Progress".
+            active_only: If True, returns only issues with status "In Progress" or "Code Review".
             project: Optional project key to filter (default: PROJECT_KEY).
 
         Returns:
             List of issue dicts with keys: key, summary, status.
         """
+        if project is None:
+            project = PROJECT_KEY
         if project:
             if active_only:
                 jql = (

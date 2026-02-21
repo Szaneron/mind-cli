@@ -28,7 +28,7 @@ def tasks(active: bool, project: str) -> None:
     """
     Display Jira tasks assigned to you.
 
-    Lists open issues assigned to the current user, sorted by most recently updated.
+    Lists open issues assigned to the current user. Default project is set from the environment variable PROJECT_KEY.
     Use --active to show only in-progress tasks.
     Use --project to filter by project key.
     """

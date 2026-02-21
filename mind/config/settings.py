@@ -39,7 +39,6 @@ _required_env_names = [
     "JIRA_BASE_URL",
     "JIRA_EMAIL",
     "JIRA_API_TOKEN",
-    "PROJECT_KEY",
     "CLOCKIFY_API_KEY",
     "CLOCKIFY_WORKSPACE_ID",
     "CLOCKIFY_PROJECT_ID",
