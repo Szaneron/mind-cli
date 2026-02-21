@@ -10,7 +10,7 @@ import base64
 
 import httpx
 
-from mind.config.settings import JIRA_API_TOKEN, JIRA_BASE_URL, JIRA_EMAIL
+from mind.config.settings import JIRA_API_TOKEN, JIRA_BASE_URL, JIRA_EMAIL, PROJECT_KEY
 
 
 class JiraAPI:
@@ -84,3 +84,53 @@ class JiraAPI:
             labels = [*labels, issue_type]
 
         return description, labels
+
+    def get_assigned_issues(
+        self, active_only: bool = False, project: str = PROJECT_KEY
+    ) -> list[dict]:
+        """
+        Fetch open Jira issues assigned to the current user.
+
+        Args:
+            active_only: If True, returns only issues with status "In Progress".
+            project: Optional project key to filter (default: PROJECT_KEY).
+
+        Returns:
+            List of issue dicts with keys: key, summary, status.
+        """
+        if project:
+            if active_only:
+                jql = (
+                    f"project = {project} AND assignee = currentUser() AND "
+                    f'(status = "In Progress" OR status = "Code Review") ORDER BY updated DESC'
+                )
+            else:
+                jql = f"project = {project} AND assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC"
+        else:
+            if active_only:
+                jql = 'assignee = currentUser() AND (status = "In Progress" OR status = "Code Review") ORDER BY updated DESC'
+            else:
+                jql = "assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC"
+
+        url = f"{self.base_url}/rest/api/3/search/jql"
+        params = {
+            "jql": jql,
+            "fields": "summary,status",
+            "maxResults": 50,
+        }
+
+        response = self.client.get(url, headers=self.headers, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+        issues = []
+        for item in data.get("issues", []):
+            fields = item.get("fields", {})
+            issues.append(
+                {
+                    "key": item["key"],
+                    "summary": fields.get("summary", ""),
+                    "status": fields.get("status", {}).get("name", ""),
+                }
+            )
+        return issues

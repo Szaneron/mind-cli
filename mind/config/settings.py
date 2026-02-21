@@ -9,7 +9,7 @@ load_dotenv()
 WORKING_HOURS_PER_DAY = 8
 TIMEZONE = "Europe/Warsaw"
 FAVORITES_PATH = pathlib.Path(str(pathlib.Path.home() / ".mind-cli" / "favorites.json"))
-
+PROJECT_KEY = os.getenv("PROJECT_KEY", "")
 
 # Jira Configuration
 JIRA_BASE_URL = os.getenv("JIRA_BASE_URL", "")
@@ -39,6 +39,7 @@ _required_env_names = [
     "JIRA_BASE_URL",
     "JIRA_EMAIL",
     "JIRA_API_TOKEN",
+    "PROJECT_KEY",
     "CLOCKIFY_API_KEY",
     "CLOCKIFY_WORKSPACE_ID",
     "CLOCKIFY_PROJECT_ID",

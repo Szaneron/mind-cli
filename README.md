@@ -88,6 +88,45 @@ mind download report
 mind download report 1
 ```
 
+### Tasks listing (Jira)
+
+```bash
+# List open tasks assigned to you (default project from env)
+mind tasks
+
+# List only active tasks (In Progress, Code Review)
+mind tasks --active
+
+# List tasks for a specific project
+mind tasks --project PEG
+
+# List only active tasks for a specific project
+mind tasks --project PEG --active
+```
+
+- By default, tasks are filtered by the project key from your `.env` (`PROJECT_KEY`).
+- `--active` shows only tasks with status "In Progress" or "Code Review".
+- Tasks are sorted by status: IN PROGRESS, ANALYSIS, CODE REVIEW, TO DO, ON STAGING, READY FOR PRODUCTION, READY FOR QA, QA FAILED, ON HOLD.
+
+### Favorites
+
+```bash
+# Add a Jira issue to favorites
+mind fav add PEG-1234
+
+# Remove a Jira issue from favorites
+mind fav remove PEG-1234
+
+# List your favorite issues
+mind fav list
+
+# Clear all favorites
+mind fav clear
+```
+
+- Favorites are stored locally in `~/.mind-cli/favorites.json`.
+- You can quickly manage your favorite issues.
+
 ### Help
 
 ```bash
