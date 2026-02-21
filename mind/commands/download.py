@@ -1,3 +1,10 @@
+"""
+Commands for downloading reports from Clockify.
+
+Includes:
+- download report: Download monthly PDF report
+"""
+
 import click
 
 from mind.commands.validation import validate_month
