@@ -4,16 +4,16 @@ import click
 def validate_issue_key(ctx, param, value):
     """
     Validate issue key (PEG-123 or peg-123).
-    Accepts uppercase/lowercase, must match PEG-<digits>.
+    Accept generic project keys like PROJ-123: leading letter, then letters/digits, dash, digits.
     """
     import re
 
     if value is None:
         return value
-    if not re.match(r"^peg-\d+$", value.lower()):
+    if not re.match(r"^[A-Z][A-Z0-9]*-\d+$", value, re.IGNORECASE):
         raise click.BadParameter(
             click.style(
-                "❌ Issue key must be in format PEG-123 (case-insensitive)", fg="red"
+                "❌ Issue key must be in format PROJ-123 (case-insensitive)", fg="red"
             )
         )
     return value.upper()

@@ -18,7 +18,7 @@ CLOCKIFY_WORKSPACE_ID = os.getenv("CLOCKIFY_WORKSPACE_ID", "")
 CLOCKIFY_PROJECT_ID = os.getenv("CLOCKIFY_PROJECT_ID", "")
 CLOCKIFY_USER_ID = os.getenv("CLOCKIFY_USER_ID", "")
 CLOCKIFY_REPORTS_API_URL = os.getenv(
-    "CLOCKIFY_REPORTS_API_URL", "https://reports.api.clockify.me/v1"
+    "CLOCKIFY_REPORTS_API_URL", "https://reports.api.clockify.me"
 )
 CLOCKIFY_REPORT_SAVE_PATH = os.getenv("CLOCKIFY_REPORT_SAVE_PATH", "")
 CLOCKIFY_REPORT_BASE_NAME = os.getenv("CLOCKIFY_REPORT_BASE_NAME", "clockify_report")

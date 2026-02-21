@@ -25,6 +25,7 @@ class ClockifyAPI:
         self.api_key = CLOCKIFY_API_KEY
         self.workspace_id = CLOCKIFY_WORKSPACE_ID
         self.project_id = CLOCKIFY_PROJECT_ID
+        self.client = httpx.Client(timeout=10)
 
     @property
     def headers(self) -> dict[str, str]:
@@ -42,7 +43,7 @@ class ClockifyAPI:
     def get_current_user(self) -> dict:
         """Fetch current user data."""
         url = f"{self.base_url}/user"
-        response = httpx.get(url, headers=self.headers)
+        response = self.client.get(url, headers=self.headers)
         response.raise_for_status()
         return response.json()
 
@@ -57,14 +58,14 @@ class ClockifyAPI:
         """
         url = f"{self.base_url}/workspaces/{self.workspace_id}/user/{user_id}/time-entries"
         params = {"start": start, "end": end, "page-size": 5000}
-        response = httpx.get(url, headers=self.headers, params=params)
+        response = self.client.get(url, headers=self.headers, params=params)
         response.raise_for_status()
         return response.json()
 
     def create_time_entry(self, payload: dict) -> dict:
         """Create a new time entry."""
         url = f"{self.base_url}/workspaces/{self.workspace_id}/time-entries"
-        response = httpx.post(url, headers=self.headers, json=payload)
+        response = self.client.post(url, headers=self.headers, json=payload)
         response.raise_for_status()
         return response.json()
 
@@ -72,7 +73,7 @@ class ClockifyAPI:
         """Find a task by name."""
         url = f"{self.base_url}/workspaces/{self.workspace_id}/projects/{self.project_id}/tasks"
         params = {"name": task_name, "strict-name-search": "true", "page-size": 500}
-        response = httpx.get(url, headers=self.headers, params=params)
+        response = self.client.get(url, headers=self.headers, params=params)
         response.raise_for_status()
         tasks = response.json()
         return next(
@@ -88,7 +89,7 @@ class ClockifyAPI:
         """Create a new task in the project."""
         url = f"{self.base_url}/workspaces/{self.workspace_id}/projects/{self.project_id}/tasks"
         payload = {"name": task_name, "projectId": self.project_id}
-        response = httpx.post(url, headers=self.headers, json=payload)
+        response = self.client.post(url, headers=self.headers, json=payload)
         response.raise_for_status()
         return response.json()
 
@@ -96,7 +97,7 @@ class ClockifyAPI:
         """Fetch all tags from the workspace."""
         url = f"{self.base_url}/workspaces/{self.workspace_id}/tags"
         params = {"page-size": 500}
-        response = httpx.get(url, headers=self.headers, params=params)
+        response = self.client.get(url, headers=self.headers, params=params)
         response.raise_for_status()
         return response.json()
 

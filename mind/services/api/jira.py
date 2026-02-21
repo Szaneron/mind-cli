@@ -20,6 +20,7 @@ class JiraAPI:
         self.base_url = JIRA_BASE_URL
         self.email = JIRA_EMAIL
         self.api_token = JIRA_API_TOKEN
+        self.client = httpx.Client(timeout=10)
 
     @property
     def headers(self) -> dict[str, str]:
@@ -45,7 +46,7 @@ class JiraAPI:
         url = f"{self.base_url}/rest/api/3/issue/{issue_key}"
         params = {"fields": fields_param}
 
-        response = httpx.get(url, headers=self.headers, params=params)
+        response = self.client.get(url, headers=self.headers, params=params)
         response.raise_for_status()
         return response.json()
 

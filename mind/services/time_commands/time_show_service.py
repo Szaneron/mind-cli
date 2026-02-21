@@ -3,7 +3,11 @@ from datetime import date as dt_date
 
 from rich.console import Console
 
-from mind.common.utils import day_range_utc, utc_iso_to_warsaw_local
+from mind.common.utils import (
+    day_range_utc,
+    sum_entry_durations,
+    utc_iso_to_warsaw_local,
+)
 from mind.services.api import ClockifyAPI
 
 
@@ -48,30 +52,17 @@ class TimeShowService:
             )
             return
 
-        total_seconds = self._sum_entry_durations(entries)
+        total_seconds = sum_entry_durations(entries)
         hours = total_seconds // 3600
         minutes = (total_seconds % 3600) // 60
         summary = f" [blue](logged {hours}h {minutes}m)[/blue]" if total_seconds else ""
         self.console.print(f"🕒 [bold]Time entries on {date_str}{summary}:[/bold]")
 
         for entry in entries:
-            self.console.print(self._format_entry(entry))
-
-    def _sum_entry_durations(self, entries: list[dict]) -> int:
-        """
-        Sum the durations of all time entries in seconds.
-        """
-        total = 0
-        for entry in entries:
             try:
-                start = entry["timeInterval"]["start"]
-                end = entry["timeInterval"]["end"]
-                start_dt = utc_iso_to_warsaw_local(start)
-                end_dt = utc_iso_to_warsaw_local(end)
-                total += int((end_dt - start_dt).total_seconds())
-            except Exception:
-                pass
-        return total
+                self.console.print(self._format_entry(entry))
+            except Exception as e:
+                self.console.print(f"[red]❌ Error formatting entry: {e}[/red]")
 
     def _format_entry(self, entry: dict) -> str:
         """
@@ -81,11 +72,17 @@ class TimeShowService:
             start_str = utc_iso_to_warsaw_local(
                 entry["timeInterval"]["start"]
             ).strftime("%H:%M")
-            end_str = utc_iso_to_warsaw_local(entry["timeInterval"]["end"]).strftime(
-                "%H:%M"
-            )
+            end_val = entry["timeInterval"].get("end")
+            if end_val:
+                end_str = utc_iso_to_warsaw_local(end_val).strftime("%H:%M")
+            else:
+                end_str = "--:--"
             description = entry.get("description", "").replace("\n", " ")
             description = re.sub(r"(\[PEG-[^\]]+\])", r"[blue]\1[/blue]", description)
-            return f"{start_str}-{end_str} | {description}"
+            return (
+                f"{start_str}-{end_str} | {description}"
+                if end_str != "--:--"
+                else f"{start_str} --:-- | {description}"
+            )
         except Exception as e:
             raise ValueError(f"Error parsing entry: {e} ({entry})")

@@ -4,7 +4,7 @@ from datetime import timedelta
 import holidays
 from rich.console import Console
 
-from mind.common.utils import day_range_utc, utc_iso_to_warsaw_local
+from mind.common.utils import day_range_utc, sum_entry_durations
 from mind.config.settings import WORKING_HOURS_PER_DAY
 from mind.services.api import ClockifyAPI
 
@@ -36,7 +36,7 @@ class TimeHoursService:
         )
         end_date = end_date - timedelta(days=1)
         entries = self._fetch_entries(start_date, end_date)
-        total_seconds = self._sum_entry_durations(entries)
+        total_seconds = sum_entry_durations(entries)
         h = total_seconds // 3600
         m = (total_seconds % 3600) // 60
         month_name = start_date.strftime("%B")
@@ -52,22 +52,6 @@ class TimeHoursService:
         start_utc, _ = day_range_utc(start)
         _, end_utc = day_range_utc(end)
         return self.clockify.get_time_entries(user_id, start_utc, end_utc)
-
-    def _sum_entry_durations(self, entries: list[dict]) -> int:
-        """
-        Sum the durations of all time entries in seconds.
-        """
-        total = 0
-        for entry in entries:
-            try:
-                start = entry["timeInterval"]["start"]
-                end = entry["timeInterval"]["end"]
-                start_dt = utc_iso_to_warsaw_local(start)
-                end_dt = utc_iso_to_warsaw_local(end)
-                total += int((end_dt - start_dt).total_seconds())
-            except Exception:
-                pass
-        return total
 
     def _max_working_hours_in_month(self, year: int, month: int) -> int:
         """

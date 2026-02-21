@@ -55,7 +55,13 @@ class TimeLogService:
         parts = time_period.split("-")
         if len(parts) != 2:
             raise ValueError(f"Invalid time period format: '{time_period}'")
-        return self._normalize_time(parts[0]), self._normalize_time(parts[1])
+        start_time = self._normalize_time(parts[0])
+        end_time = self._normalize_time(parts[1])
+        if start_time >= end_time:
+            raise ValueError(
+                f"End time ({end_time}) must be after start time ({start_time})"
+            )
+        return start_time, end_time
 
     def _normalize_time(self, time_str: str) -> str:
         """Normalize a time string like '9' or '9:30' to 'HH:MM'."""

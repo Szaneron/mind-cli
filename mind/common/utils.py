@@ -34,8 +34,7 @@ def parse_day_and_month(date_string: str | None) -> dt_date:
     Parse a date string in formats:
     - DD.MM.YYYY
     - DD.MM
-    - DD
-    - MM
+    - DD (day in the current month and year)
     - None (returns today)
     Raises ValueError if parsing fails.
     """
@@ -59,3 +58,24 @@ def parse_day_and_month(date_string: str | None) -> dt_date:
     except Exception:
         raise ValueError(f"Invalid date format: '{date_string}'")
     raise ValueError(f"Invalid date format: '{date_string}'")
+
+
+def sum_entry_durations(entries: list[dict]) -> int:
+    """
+    Sum the durations of all time entries in seconds.
+    Skips entries with missing or invalid timestamps (e.g., running timers).
+    """
+    total = 0
+    for entry in entries:
+        time_interval = entry.get("timeInterval") or {}
+        start = time_interval.get("start")
+        end = time_interval.get("end")
+        if not start or not end:
+            continue
+        try:
+            start_dt = utc_iso_to_warsaw_local(start)
+            end_dt = utc_iso_to_warsaw_local(end)
+            total += int((end_dt - start_dt).total_seconds())
+        except (TypeError, ValueError):
+            continue
+    return total
