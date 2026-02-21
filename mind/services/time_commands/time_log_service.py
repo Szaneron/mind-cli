@@ -1,6 +1,7 @@
 import re
 from datetime import date as dt_date
 
+import httpx
 from rich.console import Console
 
 from mind.common.utils import local_time_to_utc_iso
@@ -47,6 +48,11 @@ class TimeLogService:
             self.console.print(
                 f"🕒 {date.strftime('%d-%m-%Y')} | {start_time} – {end_time}"
             )
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                self.console.print(f"[red]❌ Task {issue_key} not found in Jira.[/red]")
+            else:
+                self.console.print(f"[red]❌ Jira error: {e}[/red]")
         except Exception as e:
             self.console.print(f"[red]❌ Error logging time: {e}[/red]")
 
