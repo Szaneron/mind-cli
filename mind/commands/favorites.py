@@ -1,8 +1,3 @@
-import click
-
-from mind.commands.validation import validate_issue_key
-from mind.services.favorites_commands import FavoritesService
-
 """
 Commands for managing favorite tasks.
 
@@ -11,6 +6,11 @@ Includes:
 - fav remove: Remove a task from favorites
 - fav list: List all favorite tasks
 """
+
+import click
+
+from mind.commands.validation import validate_issue_key
+from mind.services.favorites_commands import FavoritesService
 
 
 @click.group()
@@ -51,13 +51,13 @@ def fav_list() -> None:
 def fav_clear() -> None:
     """Clear all favorite tasks after confirmation."""
     service = FavoritesService()
-    favorites = service._load()
-    if not favorites:
-        service.clear()
+    if service.is_empty():
+        click.secho("Favorites list is already empty.", fg="yellow")
         return
     if not click.confirm(
         "💭 Are you sure you want to clear all favorites? This cannot be undone."
     ):
-        service.console.print("❌ Cancelled. Favorites list not cleared.")
+        click.secho("❌ Cancelled. Favorites list not cleared.", fg="yellow")
         return
-    service.clear()
+    if service.clear():
+        click.secho("🧹 All favorites have been cleared.", fg="green")

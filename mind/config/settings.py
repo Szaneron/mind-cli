@@ -8,7 +8,7 @@ load_dotenv()
 # App Constants
 WORKING_HOURS_PER_DAY = 8
 TIMEZONE = "Europe/Warsaw"
-FAVORITES_PATH = pathlib.Path(__file__).parent.parent / "data" / "favorites.json"
+FAVORITES_PATH = pathlib.Path(str(pathlib.Path.home() / ".mind-cli" / "favorites.json"))
 
 
 # Jira Configuration
