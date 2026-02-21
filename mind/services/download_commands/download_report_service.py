@@ -2,7 +2,6 @@ import calendar
 import os
 from datetime import date as dt_date
 
-import click
 from rich.console import Console
 
 from mind.common.utils import max_working_hours_in_month
@@ -21,10 +20,10 @@ class DownloadReportService:
         self.console = Console()
         self.clockify = ClockifyAPI()
 
-    def generate_report(self, month: int | None = None) -> None:
+    def prepare_report(self, month: int | None = None):
         """
-        Generate a monthly PDF report for the given month (default: current).
-        Shows total logged hours and asks for confirmation before downloading.
+        Prepare data for a monthly PDF report for the given month (default: current).
+        Returns: dict with summary, filepath, year, month, total_seconds, max_hours, error (if any)
         """
         today = dt_date.today()
         year = today.year
@@ -39,40 +38,48 @@ class DownloadReportService:
         start_display = start_date.strftime("%d.%m.%Y")
         end_display = end_date.strftime("%d.%m.%Y")
         month_name = start_date.strftime("%B")
-        self.console.print(
-            f"🔍 Checking logged hours for [blue]{month_name}[/blue] ({start_display} to {end_display})..."
-        )
-
+        summary = f"🔍 Checking logged hours for [blue]{month_name}[/blue] ({start_display} to {end_display})..."
+        self.console.print(summary)
         try:
             total_seconds = self._get_total_seconds(start_str, end_str)
-        except RuntimeError as e:
-            if "Failed to fetch report results" in str(e):
-                self.console.print(
-                    f"[yellow]⚠️  No time entries found for {month_name} {year}.[/yellow]"
-                )
-                return
+        except Exception as e:
+            msg = str(e)
+            if "No time entries found" in msg:
+                return {
+                    "error": f"[yellow]⚠️  No time entries found for {month_name} {year}.[/yellow]"
+                }
+            elif "still processing" in msg or "API is slow" in msg:
+                return {
+                    "error": f"[yellow]⏳ Clockify report is still processing or API is slow. Please try again in a moment.[/yellow]"
+                }
             else:
-                self.console.print(f"[red]❌ Error: {e}[/red]")
-                return
+                return {"error": f"[red]❌ Error: {e}[/red]"}
 
         max_hours = max_working_hours_in_month(year=year, month=month)
         h = total_seconds // 3600
         m = (total_seconds % 3600) // 60
         logged_str = f"{h}h {m}m" if m else f"{h}h"
         color = "green" if (h + m / 60) >= max_hours else "yellow"
-        self.console.print(
-            f"✅ Total logged hours: [bold {color}]{logged_str} / {max_hours}h[/bold {color}]"
-        )
-
-        self.console.print(
-            f"💭 Do you want to generate the PDF report for [blue]{month_name} {year}[/blue]?"
-        )
-        if not click.confirm("⏳ Proceed?"):
-            self.console.print("❌ Cancelled.")
-            return
-
-        self.console.print("🚀 Generating the report...")
+        hours_summary = f"✅ Total logged hours: [bold {color}]{logged_str} / {max_hours}h[/bold {color}]"
         filepath = self._build_filepath(year, month)
+        return {
+            "summary": summary,
+            "hours_summary": hours_summary,
+            "filepath": filepath,
+            "year": year,
+            "month": month,
+            "month_name": month_name,
+            "total_seconds": total_seconds,
+            "max_hours": max_hours,
+        }
+
+    def download_report(self, year: int, month: int, filepath: str) -> None:
+        start_date = dt_date(year, month, 1)
+        last_day = calendar.monthrange(year, month)[1]
+        end_date = dt_date(year, month, last_day)
+        start_str = start_date.strftime("%Y-%m-%d")
+        end_str = end_date.strftime("%Y-%m-%d")
+        self.console.print("🚀 Generating the report...")
         self._download_pdf(start_str, end_str, filepath)
         self.console.print(f"✅ PDF report saved as: [green]{filepath}[/green]")
 
@@ -89,6 +96,7 @@ class DownloadReportService:
 
     def _download_pdf(self, start_date: str, end_date: str, filepath: str) -> None:
         """Submit a PDF report request and download the file."""
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         task_id = self.clockify.submit_summary_report(
             start_date, end_date, export_pdf=True
         )

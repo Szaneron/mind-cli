@@ -43,12 +43,13 @@ class ClockifyAPI:
 
     def get_time_entries(self, start: str, end: str) -> list[dict]:
         """
-        Fetch time entries for a user in the given range.
+        Fetch time entries for the configured user in the given range.
 
         Args:
-            user_id: Clockify user ID
             start: Start date in ISO format (YYYY-MM-DDTHH:MM:SSZ)
             end: End date in ISO format (YYYY-MM-DDTHH:MM:SSZ)
+        Note:
+            Uses self.user_id from settings/configuration.
         """
         url = f"{self.base_url}/workspaces/{self.workspace_id}/user/{self.user_id}/time-entries"
         params = {"start": start, "end": end, "page-size": 5000}
@@ -181,6 +182,8 @@ class ClockifyAPI:
 
         Returns:
             The report data dict containing totals.
+        Raises:
+            Exception: if report is not ready or has no data
         """
         url = f"{self.reports_url}/report/workspaces/{self.workspace_id}/async/reports/summary/{task_id}"
 
@@ -191,13 +194,17 @@ class ClockifyAPI:
                 time_module.sleep(poll_interval)
                 continue
             data = response.json()
-            if data.get("totals"):
-                return data
+            if "totals" in data:
+                totals = data["totals"]
+                # totals is a list, if empty or totalTime is None/0, treat as no data
+                if totals and (totals[0].get("totalTime") not in (None, 0)):
+                    return data
+                else:
+                    raise Exception("No time entries found in Clockify report.")
+            # If 'totals' is not present, treat as not ready
             time_module.sleep(poll_interval)
 
-        raise RuntimeError(
-            f"Failed to fetch report results after {max_retries} attempts."
-        )
+        raise Exception("Clockify report is still processing or API is slow.")
 
     def download_report_pdf(
         self,

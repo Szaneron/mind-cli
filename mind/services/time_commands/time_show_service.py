@@ -57,7 +57,7 @@ class TimeShowService:
         minutes = (total_seconds % 3600) // 60
         summary = self._get_colored_summary(hours, minutes) if total_seconds else ""
         self.console.print(
-            f"🕒 [bold]Time entries on [blue]{day_name}[/blue] {date_str}{summary}[/bold]"
+            f"🕒 [bold]Time entries on [blue]{day_name}[/blue] {date_str}{summary}:[/bold]"
         )
 
         for entry in entries:
@@ -73,7 +73,7 @@ class TimeShowService:
         """
         total_hours = hours + (minutes / 60)
         color = "green" if total_hours >= 8 else "yellow"
-        return f" (logged [{color}]{hours}h {minutes}m[/{color}]):"
+        return f" (logged [{color}]{hours}h {minutes}m[/{color}])"
 
     def _format_entry(self, entry: dict) -> str:
         """
