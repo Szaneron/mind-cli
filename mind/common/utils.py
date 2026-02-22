@@ -112,6 +112,27 @@ def sum_entry_durations(entries: list[dict]) -> int:
     return total
 
 
+def format_duration(seconds: int) -> str:
+    """Format a duration in seconds as 'Xh Ym' or 'Xh'."""
+    h, rem = divmod(abs(seconds), 3600)
+    m = rem // 60
+    return f"{h}h {m}m" if m else f"{h}h"
+
+
+def month_range(month: int | None = None) -> tuple[dt_date, dt_date]:
+    """
+    Return the first and last date of the given month (defaults to current month).
+    """
+    today = dt_date.today()
+    m = month or today.month
+    y = today.year
+    first = dt_date(y, m, 1)
+    last = (
+        dt_date(y, m + 1, 1) if m < 12 else dt_date(y + 1, 1, 1)
+    ) - timedelta(days=1)
+    return first, last
+
+
 def get_branch_issue_key() -> str | None:
     """
     Detect a Jira issue key from the current Git branch name.

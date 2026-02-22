@@ -4,15 +4,17 @@ Service for comparing planned availability vs logged Clockify hours per day.
 
 from collections import defaultdict
 from datetime import date as dt_date
-from datetime import datetime, timedelta
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from rich.console import Console
 
+from mind.common.utils import day_range_utc, format_duration, month_range
 from mind.config.settings import PLANNER_USER_ID
 from mind.services.api import ClockifyAPI, PlannerAPI
 
 WARSAW_TZ = ZoneInfo("Europe/Warsaw")
+_STATUS_NOT_AVAILABLE = "notavailable"
 
 
 class PlanCompareService:
@@ -23,17 +25,17 @@ class PlanCompareService:
 
     def compare(self, month: int | None = None) -> None:
         try:
-            start_date, end_date = self._month_range(month)
-            planned = self._fetch_planned(start_date, end_date)
+            start_date, end_date = month_range(month)
+            planned, not_available = self._fetch_planned(start_date, end_date)
             logged = self._fetch_logged(start_date, end_date)
 
-            if not planned:
+            if not planned and not not_available:
                 self.console.print(
                     "[yellow]No planned availability found for this month.[/yellow]"
                 )
                 return
 
-            self._print(planned, logged)
+            self._print(planned, not_available, logged)
         except Exception as e:
             self.console.print(f"[red]❌ Error comparing hours: {e}[/red]")
 
@@ -41,44 +43,35 @@ class PlanCompareService:
     # Private helpers
     # ------------------------------------------------------------------
 
-    def _month_range(self, month: int | None) -> tuple[dt_date, dt_date]:
-        from datetime import date as dt_date
-
-        today = dt_date.today()
-        m = month or today.month
-        y = today.year
-        first = dt_date(y, m, 1)
-        last = (dt_date(y, m + 1, 1) if m < 12 else dt_date(y + 1, 1, 1)) - timedelta(
-            days=1
-        )
-        return first, last
-
-    def _fetch_planned(self, start: dt_date, end: dt_date) -> dict[dt_date, int]:
-        """Return {day: total_planned_seconds} for PLANNER_USER_ID."""
+    def _fetch_planned(
+        self, start: dt_date, end: dt_date
+    ) -> tuple[dict[dt_date, int], dict[dt_date, int]]:
+        """Return ({day: planned_seconds}, {day: planned_seconds_for_not_available_days})."""
         raw = self.planner.get_availabilities(start.isoformat(), end.isoformat())
         user = next((u for u in raw if u.get("userId") == PLANNER_USER_ID), None)
         if not user or not user.get("records"):
-            return {}
+            return {}, {}
 
         totals: dict[dt_date, int] = defaultdict(int)
+        not_available: dict[dt_date, int] = defaultdict(int)
         for entry in user["records"]:
             try:
                 s = datetime.fromisoformat(entry["start"].replace("Z", "+00:00"))
                 e = datetime.fromisoformat(entry["end"].replace("Z", "+00:00"))
                 day = s.astimezone(WARSAW_TZ).date()
-                totals[day] += max(0, int((e - s).total_seconds()))
+                duration = max(0, int((e - s).total_seconds()))
             except (KeyError, ValueError):
                 continue
-        return dict(totals)
+            if entry.get("status", "").lower() == _STATUS_NOT_AVAILABLE:
+                not_available[day] += duration
+            else:
+                totals[day] += duration
+        return dict(totals), dict(not_available)
 
     def _fetch_logged(self, start: dt_date, end: dt_date) -> dict[dt_date, int]:
         """Return {day: total_logged_seconds} from Clockify."""
-        start_utc = datetime.combine(
-            start, datetime.min.time(), tzinfo=WARSAW_TZ
-        ).strftime("%Y-%m-%dT%H:%M:%SZ")
-        end_utc = datetime.combine(
-            end, datetime.max.time().replace(microsecond=0), tzinfo=WARSAW_TZ
-        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        start_utc, _ = day_range_utc(start)
+        _, end_utc = day_range_utc(end)
         entries = self.clockify.get_time_entries(start_utc, end_utc)
 
         totals: dict[dt_date, int] = defaultdict(int)
@@ -102,59 +95,89 @@ class PlanCompareService:
 
     @staticmethod
     def _fmt(total_seconds: int) -> str:
-        h, rem = divmod(total_seconds, 3600)
-        m = rem // 60
-        return f"{h}h {m}m" if m else f"{h}h"
+        return format_duration(total_seconds)
 
-    def _print(self, planned: dict[dt_date, int], logged: dict[dt_date, int]) -> None:
-        # Only show days that have planned hours, newest first
-        days = sorted(planned.keys(), reverse=True)
+    def _print(
+        self,
+        planned: dict[dt_date, int],
+        not_available: dict[dt_date, int],
+        logged: dict[dt_date, int],
+    ) -> None:
+        # All days: working + not-available, newest first
+        all_days = sorted(set(planned) | set(not_available), reverse=True)
 
-        # Pre-build all row data to determine column widths
+        # Pre-build row data: (day, p_str, l_str, diff_str, diff_style, is_not_available)
         rows = []
-        for day in days:
-            p_sec = planned[day]
+        for day in all_days:
+            is_na = day in not_available and day not in planned
+            p_sec = planned.get(day, not_available.get(day, 0))
             l_sec = logged.get(day, 0)
-            diff = l_sec - p_sec
 
-            p_str = self._fmt(p_sec)
+            p_str = self._fmt(p_sec) if p_sec else "Not Available"
             l_str = self._fmt(l_sec)
 
-            if diff == 0:
-                diff_str = "OK"
-                diff_style = "green"
-            elif diff > 0:
-                diff_str = f"+{self._fmt(diff)}"
-                diff_style = "yellow"
+            if is_na:
+                # If there are logged hours on a not-available day, show 'Own day off' in diff column
+                if l_sec > 0:
+                    diff_str = "Own day off"
+                elif p_sec > 0 and l_sec == 0:
+                    diff_str = "Day off"
+                else:
+                    diff_str = ""
+                rows.append((day, p_str, l_str, diff_str, "", True))
             else:
-                diff_str = f"Missing: {self._fmt(abs(diff))}"
-                diff_style = "red"
+                diff = l_sec - p_sec
+                # If planned is 0 (not not-available) but logged > 0, show 'Day off'
+                if p_sec == 0 and l_sec > 0:
+                    diff_str, diff_style = "Day off", "yellow"
+                elif p_sec > 0 and l_sec == 0:
+                    diff_str, diff_style = "Day off", "yellow"
+                elif diff == 0:
+                    diff_str, diff_style = "OK", "green"
+                elif diff > 0:
+                    diff_str, diff_style = f"+{self._fmt(diff)}", "yellow"
+                else:
+                    diff_str, diff_style = f"Missing: {self._fmt(abs(diff))}", "red"
+                rows.append((day, p_str, l_str, diff_str, diff_style, False))
 
-            rows.append((day, p_str, l_str, diff_str, diff_style))
-
-        # Calculate column widths for alignment
+        # Column widths (based on all rows)
         date_w = max(len(d.strftime("%d.%m.%Y")) for d, *_ in rows)
         plan_w = max(len(r[1]) for r in rows)
         log_w = max(len(r[2]) for r in rows)
 
-        for day, p_str, l_str, diff_str, diff_style in rows:
+        for day, p_str, l_str, diff_str, diff_style, is_na in rows:
             date_col = day.strftime("%d.%m.%Y").ljust(date_w)
             plan_col = p_str.ljust(plan_w)
             log_col = l_str.ljust(log_w)
-            self.console.print(
-                f"{date_col}  Planned: [cyan]{plan_col}[/cyan]  "
-                f"Logged: [blue]{log_col}[/blue]  "
-                f"[{diff_style}]{diff_str}[/{diff_style}]"
-            )
+            if is_na:
+                # Show 'Dzień wolny' in diff column if present
+                if diff_str:
+                    self.console.print(
+                        f"[dim]{date_col}  Planned: {plan_col}  "
+                        f"Logged: {log_col}  {diff_str}[/dim]"
+                    )
+                else:
+                    self.console.print(
+                        f"[dim]{date_col}  Planned: {plan_col}  "
+                        f"Logged: {log_col}[/dim]"
+                    )
+            else:
+                self.console.print(
+                    f"{date_col}  Planned: [cyan]{plan_col}[/cyan]  "
+                    f"Logged: [blue]{log_col}[/blue]  "
+                    f"[{diff_style}]{diff_str}[/{diff_style}]"
+                )
 
-        # Summary line
-        if rows:
+        # Summary line (working days only)
+        if any(not r[5] for r in rows):
             self._print_summary(planned, logged, rows, date_w, plan_w, log_w)
 
     def _print_summary(self, planned, logged, rows, date_w, plan_w, log_w):
         self.console.print("─" * (date_w + plan_w + log_w + 40))
-        total_planned = sum(planned.values())
-        total_logged = sum(logged.get(day, 0) for day in planned)
+        # Only count working (non-not-available) days
+        working_days = {r[0] for r in rows if not r[5]}
+        total_planned = sum(planned.get(day, 0) for day in working_days)
+        total_logged = sum(logged.get(day, 0) for day in working_days)
         mismatch = total_logged - total_planned
         if mismatch == 0:
             mismatch_str = "OK"
