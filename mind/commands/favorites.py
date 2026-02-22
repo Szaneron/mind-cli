@@ -13,10 +13,12 @@ from mind.commands.validation import validate_issue_key
 from mind.services.favorites_commands import FavoritesService
 
 
-@click.group()
-def fav() -> None:
-    """Manage favorite tasks for faster time logging."""
-    pass
+@click.group(invoke_without_command=True)
+@click.pass_context
+def fav(ctx: click.Context) -> None:
+    """Manage favorite tasks for faster time logging. Defaults to 'list' when no subcommand is given."""
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(fav_list)
 
 
 @fav.command("add")

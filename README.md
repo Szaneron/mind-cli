@@ -83,9 +83,10 @@ mind tasks --project PEG                # Tasks for specific project
 mind tasks --project PEG --active       # Active tasks for specific project
 
 # --- Favorites ---
+mind fav                                # List all favorites (default)
+mind fav list                           # List all favorites
 mind fav add PEG-1234                   # Add issue to favorites
 mind fav remove PEG-1234                # Remove issue from favorites
-mind fav list                           # List all favorites
 mind fav clear                          # Clear all favorites
 
 # --- Planned availability (Planner) ---
@@ -95,10 +96,13 @@ mind plan compare                       # Planned vs logged hours, current month
 mind plan compare 11                    # Planned vs logged hours, specific month
 
 # --- Statistics dashboard ---
-mind stats                              # Monthly statistics dashboard, current month
-mind stats 1                            # Monthly statistics dashboard, specific month
-mind stats --compact                    # Compact single-line summary for current month
-mind stats 1 --compact                  # Compact single-line summary, specific month
+mind stats                              # Monthly statistics dashboard, current month (default)
+mind stats dash                         # Monthly statistics dashboard, current month
+mind stats dash 1                       # Monthly statistics dashboard, specific month
+mind stats dash --compact               # Compact single-line summary for current month
+mind stats dash 1 --compact            # Compact single-line summary, specific month
+mind stats heatmap                      # Daily hours heatmap, current month
+mind stats heatmap 1                    # Daily hours heatmap, specific month
 
 
 # --- Help ---
@@ -114,6 +118,8 @@ mind plan --help
 mind plan show --help
 mind plan compare --help
 mind stats --help                       # Show help for stats command
+mind stats dash --help                  # Show help for stats dash
+mind stats heatmap --help               # Show help for stats heatmap
 ```
 
 ## Usage
@@ -199,6 +205,7 @@ mind fav add PEG-1234
 mind fav remove PEG-1234
 
 # List your favorite issues
+mind fav        # (default)
 mind fav list
 
 # Clear all favorites
@@ -229,24 +236,32 @@ mind plan compare 11
 - Requires `PLANNER_BASE_URL`, `PLANNER_USERNAME`, `PLANNER_PASSWORD` and `PLANNER_USER_ID` in your `.env`.
 - JWT token is cached in `~/.mind-cli/.planner_token` and refreshed automatically when expired.
 
-### Statistics Dashboard
+### Statistics
 
 ```bash
 # Show statistics dashboard for the current month
-mind stats
+mind stats      # (default)
+mind stats dash
 
 # Show statistics dashboard for a specific month
-mind stats 3
+mind stats dash 3
 
 # Show compact single-line summary for current month
-mind stats --compact
+mind stats dash --compact
 
 # Show compact summary for a specific month
-mind stats 3 --compact
+mind stats dash 3 --compact
+
+# Show daily hours heatmap for the current month
+mind stats heatmap
+
+# Show daily hours heatmap for a specific month
+mind stats heatmap 3
 ```
 
-- `stats` displays a full monthly dashboard: logged vs planned time, office/remote ratio, stability, highlights, and average hours per day.
-- `stats --compact` prints a concise single-line summary for quick review.
+- `stats dash` displays a full monthly dashboard: logged vs planned time, office/remote ratio, stability, highlights, and average hours per day.
+- `stats dash --compact` prints a concise single-line summary for quick review.
+- `stats heatmap` renders a bar chart of daily logged hours.
 - Requires time entries from Clockify and planned availability from Planner.
 - All dashboard logic is consistent with plan compare and plan show (not-available days excluded from stats).
 
