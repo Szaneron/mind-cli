@@ -68,5 +68,8 @@ _missing = [name for name in _required_env_names if not globals()[name]]
 if _missing:
     YELLOW = "\033[93m"
     RESET = "\033[0m"
-    msg = f"{YELLOW}Missing required env: {', '.join(_missing)}. Set them in your .env file.{RESET}"
+    msg = f"{YELLOW}Missing required env: {', '.join(_missing)}.\n"
+    msg += "Set them in ~/.mind-cli/.env (global install).\n"
+    msg += "For development, you can also use a .env file in the current directory.\n"
+    msg += RESET
     raise SystemExit(msg)

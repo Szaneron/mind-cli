@@ -10,7 +10,18 @@
 pip3 install git+https://github.com/Szaneron/mind-cli.git
 ```
 
-The `mind` command will be available **in any terminal** (VS Code, iTerm, Terminal.app, etc.) immediately after.
+After installation, the `mind` command is available in the same Python environment used for installation.
+
+```bash
+# If installed globally (system/Homebrew Python), it should work immediately
+mind --help
+
+#If installed inside a virtual environment, activate it first:
+source venv/bin/activate
+mind --help
+
+# If the command is not found, ensure your Python scripts directory is in your PATH.
+```
 
 ### 2. Configure environment variables
 
@@ -21,10 +32,15 @@ mkdir -p ~/.mind-cli
 curl -o ~/.mind-cli/.env https://raw.githubusercontent.com/Szaneron/mind-cli/main/mind/config/.env_template
 ```
 
-Open `~/.mind-cli/.env` and fill in your credentials:
+Open `~/.mind-cli/.env` in your preferred editor and fill in your credentials:
 
 ```bash
+# macOS
 open ~/.mind-cli/.env
+# Linux
+xdg-open ~/.mind-cli/.env
+# Windows (PowerShell)
+notepad $env:USERPROFILE\.mind-cli\.env
 ```
 
 ### Updating to a newer version
@@ -37,7 +53,7 @@ Your `~/.mind-cli/.env` is never touched by updates.
 
 ---
 
-### **For development** (editable install with local changes):
+### **For development** (editable install with local changes)
 
 ```bash
 git clone https://github.com/Szaneron/mind-cli.git
