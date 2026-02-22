@@ -416,7 +416,7 @@ class StatisticsDashboardService:
         c.print("\n[bold][blue]Highlights[/blue][/bold]")
         if snap.longest_day:
             c.print(
-                "  Longest:  "
+                "  Longest day:  "
                 + self._fmt_highlight_day(
                     snap.longest_day,
                     snap.longest_s,
@@ -426,10 +426,10 @@ class StatisticsDashboardService:
                 )
             )
         else:
-            c.print("  Longest:  —")
+            c.print("  Longest day:  —")
         if snap.shortest_day:
             c.print(
-                "  Shortest: "
+                "  Shortest day: "
                 + self._fmt_highlight_day(
                     snap.shortest_day,
                     snap.shortest_s,
@@ -439,7 +439,7 @@ class StatisticsDashboardService:
                 )
             )
         else:
-            c.print("  Shortest: —")
+            c.print("  Shortest day: —")
 
     def _render_average(self, snap: StatsSnapshot) -> None:
         c = self.console
