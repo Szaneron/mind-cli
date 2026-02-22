@@ -104,8 +104,6 @@ mind tasks --project PEG --active       # Active tasks for specific project
 # --- Favorites ---
 mind fav                                # List all favorites (default)
 mind fav list                           # List all favorites
-mind fav                                # List all favorites (default)
-mind fav list                           # List all favorites
 mind fav add PEG-1234                   # Add issue to favorites
 mind fav remove PEG-1234                # Remove issue from favorites
 mind fav clear                          # Clear all favorites
@@ -117,7 +115,6 @@ mind plan compare                       # Planned vs logged hours, current month
 mind plan compare 11                    # Planned vs logged hours, specific month
 
 # --- Statistics dashboard ---
-mind stats                              # Monthly statistics dashboard, current month (default)
 mind stats                              # Monthly statistics dashboard, current month (default)
 mind stats dash                         # Monthly statistics dashboard, current month
 mind stats dash 1                       # Monthly statistics dashboard, specific month
