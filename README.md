@@ -4,54 +4,73 @@
 
 ## Installation
 
-### 1. Clone the repository
+### 1. Install directly from GitHub (no cloning required)
+
+```bash
+pip3 install git+https://github.com/Szaneron/mind-cli.git
+```
+
+The `mind` command will be available **in any terminal** (VS Code, iTerm, Terminal.app, etc.) immediately after.
+
+### 2. Configure environment variables
+
+Mind CLI reads credentials from `~/.mind-cli/.env`. Create it from the template:
+
+```bash
+mkdir -p ~/.mind-cli
+curl -o ~/.mind-cli/.env https://raw.githubusercontent.com/Szaneron/mind-cli/main/mind/config/.env_template
+```
+
+Open `~/.mind-cli/.env` and fill in your credentials:
+
+```bash
+open ~/.mind-cli/.env
+```
+
+### Updating to a newer version
+
+```bash
+pip3 install --upgrade git+https://github.com/Szaneron/mind-cli.git
+```
+
+Your `~/.mind-cli/.env` is never touched by updates.
+
+---
+
+### **For development** (editable install with local changes):
 
 ```bash
 git clone https://github.com/Szaneron/mind-cli.git
 cd mind-cli
+pip install -e .
+mkdir -p ~/.mind-cli
+cp mind/config/.env_template ~/.mind-cli/.env
 ```
 
-### 2. Configure environment variables
-
-Copy `mind/config/.env_template` to `mind/config/.env` and fill in your credentials:
+### ENV TEMPLATE
 
 ```env
-# Jira Configuration
 JIRA_BASE_URL=https://your-domain.atlassian.net
 JIRA_EMAIL=your.email@example.com
 JIRA_API_TOKEN=your_jira_api_token
 
-# Clockify Configuration
 CLOCKIFY_BASE_API_URL=https://api.clockify.me/api/v1
 CLOCKIFY_API_KEY=your_clockify_api_key
 CLOCKIFY_WORKSPACE_ID=your_workspace_id
 CLOCKIFY_PROJECT_ID=your_project_id
 CLOCKIFY_USER_ID=your_user_id
 CLOCKIFY_REPORTS_API_URL=https://reports.api.clockify.me
-CLOCKIFY_REPORT_SAVE_PATH=/Users/
+CLOCKIFY_REPORT_SAVE_PATH=/Users/your_username/Downloads
 CLOCKIFY_REPORT_BASE_NAME=your_report_name
 
-# Planner Configuration
 PLANNER_BASE_URL=https://your-planner-domain/api
 PLANNER_USERNAME=your_planner_username
 PLANNER_PASSWORD=your_planner_password
-PLANNER_USER_ID=your_numeric_user_id
+PLANNER_USER_ID=12345
 
-# Other
 TASK_PROVIDER=jira
 PROJECT_KEY=PROJ
 ```
-
-### 3. Install as a package (available globally in any terminal)
-
-```bash
-# Standard install
-pip install .
-# Or editable install (code changes are applied immediately)
-pip install -e .
-```
-
-After installation, the `mind` command will be available **in any terminal** (VS Code, RubyMine, PyCharm iTerm, Terminal.app, etc.) if Python is in your PATH.
 
 ## Quick Reference
 
