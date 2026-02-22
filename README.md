@@ -236,7 +236,7 @@ mind plan compare 11
 - Requires `PLANNER_BASE_URL`, `PLANNER_USERNAME`, `PLANNER_PASSWORD` and `PLANNER_USER_ID` in your `.env`.
 - JWT token is cached in `~/.mind-cli/.planner_token` and refreshed automatically when expired.
 
-### Statistics Dashboard
+### Statistics
 
 ```bash
 # Show statistics dashboard for the current month

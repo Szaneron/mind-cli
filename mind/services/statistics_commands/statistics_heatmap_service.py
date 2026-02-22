@@ -63,8 +63,10 @@ class StatisticsHeatmapService:
     def _group_by_day(
         self, entries: list[dict], start: dt_date, end: dt_date
     ) -> dict[dt_date, int]:
-        """Return {day: total_logged_seconds} for every day in the range."""
-        totals: dict[dt_date, int] = {}
+        """Return {day: total_logged_seconds} for every day in the range (days with no entries = 0)."""
+        totals: dict[dt_date, int] = {
+            start + timedelta(days=i): 0 for i in range((end - start).days + 1)
+        }
         for entry in entries:
             try:
                 interval = entry.get("timeInterval") or {}
@@ -78,7 +80,7 @@ class StatisticsHeatmapService:
                 if day < start or day > end:
                     continue
                 seconds = int((end_dt - start_dt).total_seconds())
-                totals[day] = totals.get(day, 0) + seconds
+                totals[day] += seconds
             except Exception:
                 continue
         return totals
