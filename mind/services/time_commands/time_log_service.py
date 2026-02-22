@@ -1,11 +1,16 @@
 import re
 from datetime import date as dt_date
+from datetime import datetime
 
 import httpx
 from rich.console import Console
 
-from mind.common.utils import local_time_to_utc_iso
-from mind.config.settings import CLOCKIFY_PROJECT_ID, TASK_PROVIDER
+from mind.common.utils import (
+    day_range_utc,
+    local_time_to_utc_iso,
+    utc_iso_to_warsaw_local,
+)
+from mind.config.settings import CLOCKIFY_PROJECT_ID, PROJECT_KEY, TASK_PROVIDER
 from mind.services.api import ClockifyAPI, JiraAPI
 
 
@@ -21,10 +26,13 @@ class TimeLogService:
         self.clockify = ClockifyAPI()
         self.jira = JiraAPI()
 
-    def log_time(self, issue_key: str, time_period: str, date: dt_date) -> None:
+    def log_time(
+        self, issue_key: str, time_period: str, date: dt_date, force: bool = False
+    ) -> None:
         """
         Log time for a given issue and time period on the given date.
         Supports only Jira (TASK_PROVIDER='jira'). Trello is not yet supported.
+        Prevents duplicate entries for the same task and exact time range unless --force is used.
         """
         if TASK_PROVIDER != "jira":
             self.console.print(
@@ -40,6 +48,24 @@ class TimeLogService:
             payload = self._build_payload(
                 date, start_time, end_time, description, task["id"], tag_ids
             )
+
+            all_ranges = self._get_task_time_ranges(task["id"], date, description)
+            has_overlap = self._detect_overlap(
+                task["id"], date, start_time, end_time, description
+            )
+            if has_overlap and not force:
+                hours_str = ", ".join(all_ranges)
+                self.console.print(
+                    f"[yellow]⚠️  Overlapping entry detected for [blue]{issue_key}[/blue] on [blue]{date.strftime('%d-%m-%Y')}[/blue] ({start_time}–{end_time}).[/yellow]"
+                )
+                self.console.print(
+                    f"[yellow]🕓 All logged hours for this task: {hours_str}[/yellow]"
+                )
+                self.console.print(
+                    "[yellow]⛔ Use --force to add anyway (total time will be larger).[/yellow]"
+                )
+                return
+
             self.clockify.create_time_entry(payload)
             description_colored = re.sub(
                 r"\[(PEG-\d+)\]", r"[blue][\1][/blue]", description
@@ -49,12 +75,75 @@ class TimeLogService:
                 f"🕒 {date.strftime('%d-%m-%Y')} | {start_time} – {end_time}"
             )
         except httpx.HTTPStatusError as e:
+            project_key = PROJECT_KEY.upper()
+
             if e.response.status_code == 404:
-                self.console.print(f"[red]❌ Task {issue_key} not found in Jira.[/red]")
+                self.console.print(
+                    f"[red]❌ Task {issue_key} not found in {project_key}.[/red]"
+                )
             else:
-                self.console.print(f"[red]❌ Jira error: {e}[/red]")
+                self.console.print(f"[red]❌ {project_key} error: {e}[/red]")
         except Exception as e:
             self.console.print(f"[red]❌ Error logging time: {e}[/red]")
+
+    def _get_task_time_ranges(
+        self,
+        task_id: str,
+        date: dt_date,
+        description: str = None,
+    ) -> list[str]:
+        """
+        Returns all logged time ranges for the task on the given day.
+        """
+        day_start, day_end = day_range_utc(date)
+        entries = self.clockify.get_time_entries(day_start, day_end)
+        all_ranges = []
+        for entry in entries:
+            interval = entry.get("timeInterval", {})
+            start, end = interval.get("start"), interval.get("end")
+            if not start or not end:
+                continue
+            same_task = (str(entry.get("taskId")) == str(task_id)) or (
+                description and entry.get("description") == description
+            )
+            if same_task:
+                local_start = utc_iso_to_warsaw_local(start).strftime("%H:%M")
+                local_end = utc_iso_to_warsaw_local(end).strftime("%H:%M")
+                all_ranges.append(f"{local_start}–{local_end}")
+        return sorted(set(all_ranges), key=lambda x: x.split("–")[0])
+
+    def _detect_overlap(
+        self,
+        task_id: str,
+        date: dt_date,
+        start_time: str,
+        end_time: str,
+        description: str = None,
+    ) -> bool:
+        """
+        Returns True if the new entry overlaps with any existing entry for the task.
+        """
+        entry_start_dt = datetime.fromisoformat(
+            local_time_to_utc_iso(date, start_time).replace("Z", "+00:00")
+        )
+        entry_end_dt = datetime.fromisoformat(
+            local_time_to_utc_iso(date, end_time).replace("Z", "+00:00")
+        )
+        day_start, day_end = day_range_utc(date)
+        entries = self.clockify.get_time_entries(day_start, day_end)
+        for entry in entries:
+            interval = entry.get("timeInterval", {})
+            start, end = interval.get("start"), interval.get("end")
+            if not start or not end:
+                continue
+            start_dt = datetime.fromisoformat(start.replace("Z", "+00:00"))
+            end_dt = datetime.fromisoformat(end.replace("Z", "+00:00"))
+            same_task = (str(entry.get("taskId")) == str(task_id)) or (
+                description and entry.get("description") == description
+            )
+            if same_task and start_dt < entry_end_dt and end_dt > entry_start_dt:
+                return True
+        return False
 
     def _parse_time_period(self, time_period: str) -> tuple[str, str]:
         """Parse time period string (e.g. '9-17' or '9:30-12:45') into (HH:MM, HH:MM)."""

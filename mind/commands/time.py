@@ -32,7 +32,13 @@ _TIME_PERIOD_PATTERN = re.compile(r"^\d{1,2}(:\d{2})?-\d{1,2}(:\d{2})?$")
 @click.argument("issue_key", required=False, default=None)
 @click.argument("time_period", required=False, default=None)
 @click.argument("date", required=False, callback=validate_date)
-def log(issue_key: str | None, time_period: str | None, date: dt_date | None) -> None:
+@click.option("--force", is_flag=True, help="Override duplicate entry protection.")
+def log(
+    issue_key: str | None,
+    time_period: str | None,
+    date: dt_date | None,
+    force: bool = False,
+) -> None:
     """
     Log time to Clockify.
 
@@ -81,7 +87,7 @@ def log(issue_key: str | None, time_period: str | None, date: dt_date | None) ->
         )
     time_period = validate_time_period(None, None, time_period)
 
-    TimeLogService().log_time(issue_key, time_period, date)
+    TimeLogService().log_time(issue_key, time_period, date, force=force)
 
 
 @click.command()

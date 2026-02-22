@@ -61,6 +61,7 @@ mind log PROJ-123 9-17                  # Log time for issue, today
 mind log PROJ-123 9:30-12:45 15.11      # Log time for issue, specific date
 mind log 9-17                           # Log using issue key from Git branch
 mind log PROJ-456 9-17                  # Log with explicit key override
+mind log PROJ-123 9-17 --force          # Log overlapping time (total time will be larger)
 
 # --- Display entries ---
 mind show                               # Today's entries
@@ -112,6 +113,9 @@ mind plan compare --help
 ### Time logging
 
 You can log time by providing an explicit Jira issue key, or let Mind CLI automatically detect the issue key from your current Git branch name (e.g. `PROJ-123-feature` → `PROJ-123`).
+
+**Overlap detection:**
+When logging time, Mind CLI checks for overlapping entries for the same task and date. If an overlap is detected, you will see a warning with all logged time ranges for that task and date, and the date will be shown in the warning. To log overlapping time, use the `--force` flag (total time will be larger).
 
 ```bash
 # Log time for PROJ-123 from 9:00 to 17:00 (today)
