@@ -150,7 +150,7 @@ class PlanCompareService:
             plan_col = p_str.ljust(plan_w)
             log_col = l_str.ljust(log_w)
             if is_na:
-                # Show 'Dzień wolny' in diff column if present
+                # Show 'Day off' or 'Own day off' in diff column if present
                 if diff_str:
                     self.console.print(
                         f"[dim]{date_col}  Planned: {plan_col}  "
