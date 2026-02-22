@@ -83,9 +83,10 @@ mind tasks --project PEG                # Tasks for specific project
 mind tasks --project PEG --active       # Active tasks for specific project
 
 # --- Favorites ---
+mind fav                                # List all favorites (default)
+mind fav list                           # List all favorites
 mind fav add PEG-1234                   # Add issue to favorites
 mind fav remove PEG-1234                # Remove issue from favorites
-mind fav list                           # List all favorites
 mind fav clear                          # Clear all favorites
 
 # --- Planned availability (Planner) ---
@@ -95,6 +96,7 @@ mind plan compare                       # Planned vs logged hours, current month
 mind plan compare 11                    # Planned vs logged hours, specific month
 
 # --- Statistics dashboard ---
+mind stats                              # Monthly statistics dashboard, current month (default)
 mind stats dash                         # Monthly statistics dashboard, current month
 mind stats dash 1                       # Monthly statistics dashboard, specific month
 mind stats dash --compact               # Compact single-line summary for current month
@@ -203,6 +205,7 @@ mind fav add PEG-1234
 mind fav remove PEG-1234
 
 # List your favorite issues
+mind fav        # (default)
 mind fav list
 
 # Clear all favorites
@@ -237,6 +240,7 @@ mind plan compare 11
 
 ```bash
 # Show statistics dashboard for the current month
+mind stats      # (default)
 mind stats dash
 
 # Show statistics dashboard for a specific month

@@ -15,9 +15,12 @@ from mind.services.statistics_commands import (
 )
 
 
-@click.group()
-def stats() -> None:
-    """Monthly statistics commands."""
+@click.group(invoke_without_command=True)
+@click.pass_context
+def stats(ctx: click.Context) -> None:
+    """Monthly statistics commands. Defaults to 'dash' when no subcommand is given."""
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(dash)
 
 
 @stats.command("dash")
