@@ -6,10 +6,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # App Constants
+PROJECT_KEY = os.getenv("PROJECT_KEY", "")
 WORKING_HOURS_PER_DAY = 8
 TIMEZONE = "Europe/Warsaw"
 FAVORITES_PATH = pathlib.Path(str(pathlib.Path.home() / ".mind-cli" / "favorites.json"))
-PROJECT_KEY = os.getenv("PROJECT_KEY", "")
+# Token cache path (no extension)
+PLANNER_TOKEN_PATH = pathlib.Path(
+    str(pathlib.Path.home() / ".mind-cli" / ".planner_token")
+)
 
 # Jira Configuration
 JIRA_BASE_URL = os.getenv("JIRA_BASE_URL", "")
@@ -35,6 +39,13 @@ CLOCKIFY_REPORT_BASE_NAME = os.getenv("CLOCKIFY_REPORT_BASE_NAME", "clockify_rep
 TASK_PROVIDER = os.getenv("TASK_PROVIDER", "jira")
 
 
+# Planner Configuration
+PLANNER_BASE_URL = os.getenv("PLANNER_BASE_URL", "")
+PLANNER_USERNAME = os.getenv("PLANNER_USERNAME", "")
+PLANNER_PASSWORD = os.getenv("PLANNER_PASSWORD", "")
+PLANNER_USER_ID = int(os.getenv("PLANNER_USER_ID", "0"))
+
+
 _required_env_names = [
     "JIRA_BASE_URL",
     "JIRA_EMAIL",
@@ -43,6 +54,10 @@ _required_env_names = [
     "CLOCKIFY_WORKSPACE_ID",
     "CLOCKIFY_PROJECT_ID",
     "CLOCKIFY_USER_ID",
+    "PLANNER_BASE_URL",
+    "PLANNER_USERNAME",
+    "PLANNER_PASSWORD",
+    "PLANNER_USER_ID",
 ]
 _missing = [name for name in _required_env_names if not globals()[name]]
 if _missing:

@@ -1,7 +1,7 @@
 import click
 
 from mind import __app_name__, __version__
-from mind.commands import download, favorites, tasks, time
+from mind.commands import download, favorites, planner, tasks, time
 
 
 @click.group()
@@ -23,6 +23,7 @@ cli.add_command(time.hours)
 cli.add_command(download.download)
 cli.add_command(favorites.fav)
 cli.add_command(tasks.tasks)
+cli.add_command(planner.plan)
 
 
 if __name__ == "__main__":

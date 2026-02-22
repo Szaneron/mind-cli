@@ -31,6 +31,12 @@ CLOCKIFY_REPORTS_API_URL=https://reports.api.clockify.me
 CLOCKIFY_REPORT_SAVE_PATH=/Users/
 CLOCKIFY_REPORT_BASE_NAME=your_report_name
 
+# Planner Configuration
+PLANNER_BASE_URL=https://your-planner-domain/api
+PLANNER_USERNAME=your_planner_username
+PLANNER_PASSWORD=your_planner_password
+PLANNER_USER_ID=your_numeric_user_id
+
 # Other
 TASK_PROVIDER=jira
 PROJECT_KEY=PROJ
@@ -46,6 +52,60 @@ pip install -e .
 ```
 
 After installation, the `mind` command will be available **in any terminal** (VS Code, RubyMine, PyCharm iTerm, Terminal.app, etc.) if Python is in your PATH.
+
+## Quick Reference
+
+```bash
+# --- Time logging ---
+mind log PROJ-123 9-17                  # Log time for issue, today
+mind log PROJ-123 9:30-12:45 15.11      # Log time for issue, specific date
+mind log 9-17                           # Log using issue key from Git branch
+mind log PROJ-456 9-17                  # Log with explicit key override
+
+# --- Display entries ---
+mind show                               # Today's entries
+mind show 15.11                         # Entries for a specific day (current year)
+mind show 15.11.2025                    # Entries for a specific day with year
+
+# --- Hours summary ---
+mind hours                              # Current month summary
+mind hours 11                           # Specific month summary
+
+# --- Download reports ---
+mind download report                    # PDF monthly report for current month
+mind download report 1                  # PDF monthly report for specific month
+
+# --- Tasks (Jira) ---
+mind tasks                              # All open tasks (default project)
+mind tasks --active                     # Only active tasks (In Progress, Code Review)
+mind tasks --project PEG                # Tasks for specific project
+mind tasks --project PEG --active       # Active tasks for specific project
+
+# --- Favorites ---
+mind fav add PEG-1234                   # Add issue to favorites
+mind fav remove PEG-1234                # Remove issue from favorites
+mind fav list                           # List all favorites
+mind fav clear                          # Clear all favorites
+
+# --- Planned availability (Planner) ---
+mind plan show                          # Planned availability, current month
+mind plan show 3                        # Planned availability, specific month
+mind plan compare                       # Planned vs logged hours, current month
+mind plan compare 11                    # Planned vs logged hours, specific month
+
+# --- Help ---
+mind --help
+mind log --help
+mind show --help
+mind hours --help
+mind download --help
+mind download report --help
+mind tasks --help
+mind fav --help
+mind plan --help
+mind plan show --help
+mind plan compare --help
+```
 
 ## Usage
 
@@ -136,18 +196,34 @@ mind fav clear
 - Favorites are stored locally in `~/.mind-cli/favorites.json`.
 - You can quickly manage your favorite issues.
 
-### Help
+### Planned availability (Planner)
 
 ```bash
-# Show general help
-mind --help
+# Show planned availability for the current month (newest day first)
+mind plan show
 
-# Show help for specific commands
+# Show planned availability for a specific month
+mind plan show 3
+
+# Compare planned vs logged hours per day for the current month
+mind plan compare
+
+# Compare for a specific month
+mind plan compare 11
+```
+
+- `plan show` displays detailed time ranges and work mode per day, with total planned hours and monthly maximum at the bottom.
+- `plan compare` shows planned vs Clockify logged hours side by side, with per-day difference (OK / Missing / overtime) and a total summary.
+- Requires `PLANNER_BASE_URL`, `PLANNER_USERNAME`, `PLANNER_PASSWORD` and `PLANNER_USER_ID` in your `.env`.
+- JWT token is cached in `~/.mind-cli/.planner_token` and refreshed automatically when expired.
+
+### Help
+
+Every command supports the `--help` flag for usage and options, e.g.:
+
+```bash
+mind --help
 mind log --help
-mind show --help
-mind hours --help
-mind download --help
-mind download report --help
 ```
 
 ## Requirements
