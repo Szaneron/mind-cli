@@ -96,12 +96,6 @@ class ClockifyAPI:
         response.raise_for_status()
         return response.json()
 
-    def get_tag_ids_by_names(self, tag_names: list[str]) -> list[str]:
-        """Get tag IDs by their names."""
-        all_tags = self.get_tags()
-        lowercase_names = [name.lower() for name in tag_names]
-        return [tag["id"] for tag in all_tags if tag["name"].lower() in lowercase_names]
-
     def submit_summary_report(
         self, start_date: str, end_date: str, export_pdf: bool = False
     ) -> str:

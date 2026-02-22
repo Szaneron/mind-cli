@@ -34,9 +34,9 @@ class TimeLogService:
 
         try:
             start_time, end_time = self._parse_time_period(time_period)
-            description, labels = self.jira.build_description_and_labels(issue_key)
+            description, labels = self._build_description_and_labels(issue_key)
             task = self._find_or_create_task(issue_key)
-            tag_ids = self.clockify.get_tag_ids_by_names(labels)
+            tag_ids = self._resolve_tag_ids(labels)
             payload = self._build_payload(
                 date, start_time, end_time, description, task["id"], tag_ids
             )
@@ -75,6 +75,24 @@ class TimeLogService:
         hour = int(parts[0])
         minute = int(parts[1]) if len(parts) > 1 else 0
         return f"{hour:02d}:{minute:02d}"
+
+    def _build_description_and_labels(self, issue_key: str) -> tuple[str, list[str]]:
+        """Fetch Jira issue data and build the Clockify entry description and label list."""
+        issue = self.jira.get_issue(issue_key, ["summary", "labels", "issuetype"])
+        fields = issue.get("fields", {})
+        summary = fields.get("summary", "")
+        labels = fields.get("labels", [])
+        issue_type = fields.get("issuetype", {}).get("name")
+        description = f"[{issue_key}] {summary}"
+        if issue_type:
+            labels = [*labels, issue_type]
+        return description, labels
+
+    def _resolve_tag_ids(self, tag_names: list[str]) -> list[str]:
+        """Resolve Clockify tag names to their IDs."""
+        all_tags = self.clockify.get_tags()
+        lowercase_names = [name.lower() for name in tag_names]
+        return [tag["id"] for tag in all_tags if tag["name"].lower() in lowercase_names]
 
     def _find_or_create_task(self, task_name: str) -> dict:
         """Find an existing Clockify task by name or create a new one."""

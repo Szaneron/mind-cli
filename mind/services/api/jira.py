@@ -65,26 +65,6 @@ class JiraAPI:
         issue = self.get_issue(issue_key, ["issuetype"])
         return issue.get("fields", {}).get("issuetype", {}).get("name", "")
 
-    def build_description_and_labels(self, issue_key: str) -> tuple[str, list[str]]:
-        """
-        Build description and labels for a time entry.
-
-        Returns:
-            Tuple: (description, labels)
-        """
-        issue = self.get_issue(issue_key, ["summary", "labels", "issuetype"])
-        fields = issue.get("fields", {})
-
-        summary = fields.get("summary", "")
-        labels = fields.get("labels", [])
-        issue_type = fields.get("issuetype", {}).get("name")
-
-        description = f"[{issue_key}] {summary}"
-        if issue_type:
-            labels = [*labels, issue_type]
-
-        return description, labels
-
     def get_assigned_issues(
         self, active_only: bool = False, project: str | None = None
     ) -> list[dict]:
