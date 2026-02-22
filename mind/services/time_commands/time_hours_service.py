@@ -1,11 +1,11 @@
 from datetime import date as dt_date
-from datetime import timedelta
 
 from rich.console import Console
 
 from mind.common.utils import (
     day_range_utc,
     max_working_hours_in_month,
+    month_range,
     sum_entry_durations,
 )
 from mind.config.settings import WORKING_HOURS_PER_DAY
@@ -28,14 +28,8 @@ class TimeHoursService:
         Show summary of logged hours for a given month (default: current month).
         Prints total logged, max possible, and summary line.
         """
-        today = dt_date.today()
-        year = today.year
-        month = month or today.month
-        start_date = dt_date(year, month, 1)
-        end_date = (
-            dt_date(year, month + 1, 1) if month < 12 else dt_date(year + 1, 1, 1)
-        )
-        end_date = end_date - timedelta(days=1)
+        start_date, end_date = month_range(month)
+        year, month = start_date.year, start_date.month
         entries = self._fetch_entries(start_date, end_date)
         total_seconds = sum_entry_durations(entries)
         h = total_seconds // 3600

@@ -94,6 +94,13 @@ mind plan show 3                        # Planned availability, specific month
 mind plan compare                       # Planned vs logged hours, current month
 mind plan compare 11                    # Planned vs logged hours, specific month
 
+# --- Statistics dashboard ---
+mind stats                              # Monthly statistics dashboard, current month
+mind stats 1                            # Monthly statistics dashboard, specific month
+mind stats --compact                    # Compact single-line summary for current month
+mind stats 1 --compact                  # Compact single-line summary, specific month
+
+
 # --- Help ---
 mind --help
 mind log --help
@@ -106,6 +113,7 @@ mind fav --help
 mind plan --help
 mind plan show --help
 mind plan compare --help
+mind stats --help                       # Show help for stats command
 ```
 
 ## Usage
@@ -217,9 +225,30 @@ mind plan compare 11
 ```
 
 - `plan show` displays detailed time ranges and work mode per day, with total planned hours and monthly maximum at the bottom.
-- `plan compare` shows planned vs Clockify logged hours side by side, with per-day difference (OK / Missing / overtime) and a total summary.
+- `plan compare` shows planned vs Clockify logged hours side by side, with per-day difference (OK / Missing / overtime), new status legend (Day off, Own day off, grayed not-available days), and a total summary. Not-available days are always grayed out and excluded from summary totals.
 - Requires `PLANNER_BASE_URL`, `PLANNER_USERNAME`, `PLANNER_PASSWORD` and `PLANNER_USER_ID` in your `.env`.
 - JWT token is cached in `~/.mind-cli/.planner_token` and refreshed automatically when expired.
+
+### Statistics Dashboard
+
+```bash
+# Show statistics dashboard for the current month
+mind stats
+
+# Show statistics dashboard for a specific month
+mind stats 3
+
+# Show compact single-line summary for current month
+mind stats --compact
+
+# Show compact summary for a specific month
+mind stats 3 --compact
+```
+
+- `stats` displays a full monthly dashboard: logged vs planned time, office/remote ratio, stability, highlights, and average hours per day.
+- `stats --compact` prints a concise single-line summary for quick review.
+- Requires time entries from Clockify and planned availability from Planner.
+- All dashboard logic is consistent with plan compare and plan show (not-available days excluded from stats).
 
 ### Help
 

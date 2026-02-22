@@ -49,9 +49,10 @@ class TimeLogService:
                 date, start_time, end_time, description, task["id"], tag_ids
             )
 
-            all_ranges = self._get_task_time_ranges(task["id"], date, description)
+            day_entries = self._fetch_day_entries(date)
+            all_ranges = self._get_task_time_ranges(task["id"], description, day_entries)
             has_overlap = self._detect_overlap(
-                task["id"], date, start_time, end_time, description
+                task["id"], date, start_time, end_time, description, day_entries
             )
             if has_overlap and not force:
                 hours_str = ", ".join(all_ranges)
@@ -86,19 +87,22 @@ class TimeLogService:
         except Exception as e:
             self.console.print(f"[red]❌ Error logging time: {e}[/red]")
 
+    def _fetch_day_entries(self, date: dt_date) -> list[dict]:
+        """Fetch all Clockify entries for the given day."""
+        day_start, day_end = day_range_utc(date)
+        return self.clockify.get_time_entries(day_start, day_end)
+
     def _get_task_time_ranges(
         self,
         task_id: str,
-        date: dt_date,
         description: str = None,
+        entries: list[dict] = None,
     ) -> list[str]:
         """
         Returns all logged time ranges for the task on the given day.
         """
-        day_start, day_end = day_range_utc(date)
-        entries = self.clockify.get_time_entries(day_start, day_end)
         all_ranges = []
-        for entry in entries:
+        for entry in (entries or []):
             interval = entry.get("timeInterval", {})
             start, end = interval.get("start"), interval.get("end")
             if not start or not end:
@@ -119,6 +123,7 @@ class TimeLogService:
         start_time: str,
         end_time: str,
         description: str = None,
+        entries: list[dict] = None,
     ) -> bool:
         """
         Returns True if the new entry overlaps with any existing entry for the task.
@@ -129,9 +134,7 @@ class TimeLogService:
         entry_end_dt = datetime.fromisoformat(
             local_time_to_utc_iso(date, end_time).replace("Z", "+00:00")
         )
-        day_start, day_end = day_range_utc(date)
-        entries = self.clockify.get_time_entries(day_start, day_end)
-        for entry in entries:
+        for entry in (entries or []):
             interval = entry.get("timeInterval", {})
             start, end = interval.get("start"), interval.get("end")
             if not start or not end:
