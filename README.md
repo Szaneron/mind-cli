@@ -240,8 +240,7 @@ mind plan compare 11
 
 ```bash
 # Show statistics dashboard for the current month
-mind stats      # (default)
-mind stats dash
+mind stats
 
 # Show statistics dashboard for a specific month
 mind stats dash 3
