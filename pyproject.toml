@@ -29,6 +29,7 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "rich>=14.3.3",
     "holidays>=0.91",
+    "toml>=0.10.2",
 ]
 
 [project.optional-dependencies]

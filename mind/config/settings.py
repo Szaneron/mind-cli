@@ -3,7 +3,12 @@ import pathlib
 
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load config from ~/.mind-cli/.env (global install) with fallback to CWD/.env (development).
+_ENV_PATH = pathlib.Path.home() / ".mind-cli" / ".env"
+if _ENV_PATH.exists():
+    load_dotenv(dotenv_path=_ENV_PATH)
+else:
+    load_dotenv()  # fallback: search CWD and parents (works for editable/dev installs)
 
 # App Constants
 PROJECT_KEY = os.getenv("PROJECT_KEY", "")
@@ -63,5 +68,8 @@ _missing = [name for name in _required_env_names if not globals()[name]]
 if _missing:
     YELLOW = "\033[93m"
     RESET = "\033[0m"
-    msg = f"{YELLOW}Missing required env: {', '.join(_missing)}. Set them in your .env file.{RESET}"
+    msg = f"{YELLOW}Missing required env: {', '.join(_missing)}.\n"
+    msg += "Set them in ~/.mind-cli/.env (global install).\n"
+    msg += "For development, you can also use a .env file in the current directory.\n"
+    msg += RESET
     raise SystemExit(msg)
