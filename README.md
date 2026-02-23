@@ -6,11 +6,19 @@
 
 ### 1. Install directly from GitHub (no cloning required)
 
+#### Recommended: pipx (macOS / Linux)
+
+[`pipx`]Automatically creates an isolated virtual environment for CLI tools and makes the `mind` command available globally — no manual venv management needed. This is the safest approach on modern macOS where Homebrew Python blocks direct `pip3` installs.
+
 ```bash
-pip3 install git+https://github.com/Szaneron/mind-cli.git
+# Install pipx if you don't have it yet
+brew install pipx
+
+# Install mind-cli
+pipx install git+https://github.com/Szaneron/mind-cli.git
 ```
 
-After installation, the `mind` command is available in the same Python environment used for installation.
+After installation the `mind` command is available globally in your terminal.
 
 ```bash
 # If installed globally (system/Homebrew Python), it should work immediately
@@ -46,7 +54,8 @@ notepad $env:USERPROFILE\.mind-cli\.env
 ### Updating to a newer version
 
 ```bash
-pip3 install --upgrade git+https://github.com/Szaneron/mind-cli.git
+# pipx
+pipx upgrade mind-cli
 ```
 
 Your `~/.mind-cli/.env` is never touched by updates.
