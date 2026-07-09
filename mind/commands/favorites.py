@@ -2,14 +2,14 @@
 Commands for managing favorite tasks.
 
 Includes:
-- fav add: Mark a task as favorite
+- fav add: Mark a task as favorite (optionally with a default time via --time)
 - fav remove: Remove a task from favorites
 - fav list: List all favorite tasks
 """
 
 import click
 
-from mind.commands.validation import validate_issue_key
+from mind.commands.validation import validate_time_period
 from mind.services.favorites_commands import FavoritesService
 
 
@@ -22,31 +22,58 @@ def fav(ctx: click.Context) -> None:
 
 
 @fav.command("add")
-@click.argument("issue_key", callback=validate_issue_key)
-def fav_add(issue_key: str) -> None:
+@click.argument("identifier")
+@click.argument("text", required=False)
+@click.option(
+    "--time",
+    "-t",
+    "default_time",
+    callback=validate_time_period,
+    help="Default time period (e.g. 9-17) used by 'mind log' when none is given.",
+)
+def fav_add(identifier: str, text: str | None, default_time: str | None) -> None:
     """
-    Mark a task as favorite.
+    Mark a task as favorite, or update an existing one's text/default time.
 
-    ISSUE_KEY: Jira issue key (e.g., PROJ-123)
+    IDENTIFIER: Jira issue key (e.g., PROJ-123) or a short alias.
+    TEXT: Optional plain text — when given, stores a text favorite without any API call.
+
+    \b
+    Examples:
+      mind fav add PROJ-123                        Jira favorite (fetches the summary)
+      mind fav add ds "Daily Standup"               Text favorite, no API call
+      mind fav add ds "Daily Standup" --time 9-15   Text favorite with a default time
+      mind fav add ds --time 9-15                   Set/update default time on an existing favorite
+      mind fav add PROJ-123 --time 9-17             Set/update default time on an existing Jira favorite
+
+    Once a favorite has a default time, 'mind log <alias> <date>' logs it without
+    needing a TIME_PERIOD (e.g. 'mind log ds 08').
     """
-    FavoritesService().add(issue_key)
+    FavoritesService().add(identifier, text, default_time)
 
 
 @fav.command("remove")
-@click.argument("issue_key", callback=validate_issue_key)
-def fav_remove(issue_key: str) -> None:
+@click.argument("identifier")
+def fav_remove(identifier: str) -> None:
     """
     Remove a task from favorites.
 
-    ISSUE_KEY: Jira issue key (e.g., PROJ-123)
+    IDENTIFIER: Jira issue key (e.g., PROJ-123) or alias.
     """
-    FavoritesService().remove(issue_key)
+    FavoritesService().remove(identifier)
 
 
 @fav.command("list")
-def fav_list() -> None:
-    """List all favorite tasks."""
-    FavoritesService().list_all()
+@click.option(
+    "--all",
+    "show_all",
+    is_flag=True,
+    default=False,
+    help="Show favorites from all providers, not just the active one.",
+)
+def fav_list(show_all: bool) -> None:
+    """List favorite tasks for the active provider (use --all for every provider)."""
+    FavoritesService().list_all(show_all=show_all)
 
 
 @fav.command("clear")

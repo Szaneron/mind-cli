@@ -93,6 +93,7 @@ PLANNER_USERNAME=your_planner_username
 PLANNER_PASSWORD=your_planner_password
 PLANNER_USER_ID=12345
 
+# Task source: 'jira' (live API) or 'trello' (Git branch name + text favorites, no API)
 TASK_PROVIDER=jira
 PROJECT_KEY=PROJ
 ```
@@ -103,8 +104,10 @@ PROJECT_KEY=PROJ
 # --- Time logging ---
 mind log PROJ-123 9-17                  # Log time for issue, today
 mind log PROJ-123 9:30-12:45 15.11      # Log time for issue, specific date
-mind log 9-17                           # Log using issue key from Git branch
+mind log 9-17                           # Log using issue key (Jira) or branch name (Trello)
 mind log PROJ-456 9-17                  # Log with explicit key override
+mind log ds 9-10                        # Log using a favorite alias (e.g. Daily Standup)
+mind log "Quick prod fix" 9-10          # Log with explicit free-text description
 mind log PROJ-123 9-17 --force          # Log overlapping time (total time will be larger)
 
 # --- Display entries ---
@@ -127,10 +130,12 @@ mind tasks --project PEG                # Tasks for specific project
 mind tasks --project PEG --active       # Active tasks for specific project
 
 # --- Favorites ---
-mind fav                                # List all favorites (default)
-mind fav list                           # List all favorites
-mind fav add PEG-1234                   # Add issue to favorites
-mind fav remove PEG-1234                # Remove issue from favorites
+mind fav                                # List favorites for the active provider
+mind fav list                           # List favorites for the active provider
+mind fav list --all                     # List favorites across all providers
+mind fav add PEG-1234                   # Add a Jira issue to favorites (fetches summary)
+mind fav add ds "Daily Standup"         # Add a text favorite/alias (no API call)
+mind fav remove PEG-1234                # Remove a favorite by key/alias
 mind fav clear                          # Clear all favorites
 
 # --- Planned availability (Planner) ---

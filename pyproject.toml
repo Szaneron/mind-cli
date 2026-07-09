@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mind-cli"
-version = "0.1.0"
+version = "0.2.0"
 description = "Mind CLI - Time logging and reporting automation"
 readme = "README.md"
 requires-python = ">=3.10"
