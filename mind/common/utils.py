@@ -133,10 +133,9 @@ def month_range(month: int | None = None) -> tuple[dt_date, dt_date]:
     return first, last
 
 
-def get_branch_issue_key() -> str | None:
+def get_current_branch() -> str | None:
     """
-    Detect a Jira issue key from the current Git branch name.
-    Returns the issue key (e.g., 'PROJ-123') or None if not found.
+    Return the current Git branch name (e.g. 'feature/PROJ-123-login'), or None if unavailable.
     """
     try:
         result = subprocess.run(
@@ -148,9 +147,38 @@ def get_branch_issue_key() -> str | None:
         if result.returncode != 0:
             return None
         branch = result.stdout.strip()
-        match = re.search(r"([A-Z][A-Z0-9]*-\d+)", branch, re.IGNORECASE)
-        if match:
-            return match.group(1).upper()
+        return branch or None
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
+        return None
+
+
+def get_branch_issue_key() -> str | None:
+    """
+    Detect a Jira issue key from the current Git branch name.
+    Returns the issue key (e.g., 'PROJ-123') or None if not found.
+    """
+    branch = get_current_branch()
+    if not branch:
+        return None
+    match = re.search(r"([A-Z][A-Z0-9]*-\d+)", branch, re.IGNORECASE)
+    if match:
+        return match.group(1).upper()
     return None
+
+
+def humanize_branch_name(branch: str | None) -> str:
+    """
+    Turn a Git branch name into a human-readable task description.
+
+    Strips technical prefixes (everything up to and including the last '/'),
+    replaces dashes/underscores with spaces, collapses whitespace and
+    capitalizes the first letter. E.g. 'feature/login-refactor' -> 'Login refactor'.
+    """
+    if not branch:
+        return ""
+    name = branch.rsplit("/", 1)[-1]
+    name = re.sub(r"[-_]+", " ", name).strip()
+    name = re.sub(r"\s+", " ", name)
+    if not name:
+        return ""
+    return name[0].upper() + name[1:]

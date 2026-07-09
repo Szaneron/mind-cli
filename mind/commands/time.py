@@ -14,11 +14,10 @@ import click
 
 from mind.commands.validation import (
     validate_date,
-    validate_issue_key,
     validate_month,
     validate_time_period,
 )
-from mind.common.utils import get_branch_issue_key
+from mind.services.favorites_commands import FavoritesService
 from mind.services.time_commands import (
     TimeHoursService,
     TimeLogService,
@@ -26,6 +25,7 @@ from mind.services.time_commands import (
 )
 
 _TIME_PERIOD_PATTERN = re.compile(r"^\d{1,2}(:\d{2})?-\d{1,2}(:\d{2})?$")
+_DATE_ARG_PATTERN = re.compile(r"^\d{1,2}(\.\d{1,2}(\.\d{4})?)?$")
 
 
 @click.command()
@@ -42,52 +42,67 @@ def log(
     """
     Log time to Clockify.
 
+    \b
     ISSUE_KEY: Jira issue key (e.g., PROJ-123) — auto-detected from Git branch if omitted
-    TIME_PERIOD: Time range (e.g., 9-17 or 9:30-12:45)
+    TIME_PERIOD: Time range (e.g., 9-17 or 9:30-12:45) — optional if the favorite has a
+                 default time set (see 'mind fav add --help')
     DATE: Optional date (e.g., 15.11), defaults to today
+
+    \b
+    Examples:
+      mind log PROJ-123 9-17         Explicit issue + time period, today
+      mind log ds 9-17 08            Explicit issue + time period + date
+      mind log ds 08                 Favorite's default time, date = 8th of this month
+      mind log ds                    Favorite's default time, today
     """
     # Shifting logic: if first arg looks like a time period (not an issue key), shift arguments.
     # The `date` callback already ran and set date=today when not provided, so we must not
     # overwrite it with None — only replace it when time_period holds an actual date string.
     if issue_key is not None and _TIME_PERIOD_PATTERN.match(issue_key):
-        if time_period is not None and re.match(
-            r"^\d{1,2}(\.\d{1,2}(\.\d{4})?)?$", time_period
-        ):
+        if time_period is not None and _DATE_ARG_PATTERN.match(time_period):
             # Second arg looks like a date string — parse it and use as date (raise on invalid)
             date = validate_date(None, None, time_period)
         time_period = issue_key
         issue_key = None
         # date already holds the correct value: either today (from callback) or the parsed date above
+    elif (
+        time_period is not None
+        and _DATE_ARG_PATTERN.match(time_period)
+        and not _TIME_PERIOD_PATTERN.match(time_period)
+    ):
+        # Second arg is a date, not a time period (e.g. 'mind log ds 08') — the time period
+        # will come from the favorite's default time instead.
+        date = validate_date(None, None, time_period)
+        time_period = None
 
-    # Auto-detect issue key from Git branch when not provided
-    if issue_key is None:
-        issue_key = get_branch_issue_key()
-        if issue_key is None:
-            raise click.UsageError(
-                click.style(
-                    "❌ No issue key provided and could not detect one from the current Git branch.",
-                    fg="red",
-                )
-            )
-        click.echo(
-            click.style(
-                f"🧠 Logging time using issue key from branch: {issue_key}", fg="cyan"
-            )
-        )
+    # The task identifier (issue_key) may be None — the provider/resolver handles favorites,
+    # explicit text and provider fallback (e.g. Jira branch key, Trello branch name).
 
-    # Validate the issue key (raises BadParameter on invalid format)
-    issue_key = validate_issue_key(None, None, issue_key)
-
-    # Validate the time period
     if time_period is None:
-        raise click.UsageError(
-            click.style(
-                "❌ TIME_PERIOD is required (e.g., 9-17 or 9:30-12:45).", fg="red"
-            )
-        )
+        time_period = _resolve_default_time(issue_key)
     time_period = validate_time_period(None, None, time_period)
 
     TimeLogService().log_time(issue_key, time_period, date, force=force)
+
+
+def _resolve_default_time(issue_key: str | None) -> str:
+    """Fall back to the favorite's stored default time when TIME_PERIOD is omitted."""
+    favorite = FavoritesService().find(issue_key) if issue_key else None
+    if favorite is not None:
+        default_time = favorite.get("default_time")
+        if default_time:
+            return default_time
+        raise click.UsageError(
+            click.style(
+                f"❌ Favorite '{issue_key}' has no default time set. "
+                f"Provide TIME_PERIOD explicitly, or set one with: "
+                f"mind fav add {issue_key} --time 9-17",
+                fg="red",
+            )
+        )
+    raise click.UsageError(
+        click.style("❌ TIME_PERIOD is required (e.g., 9-17 or 9:30-12:45).", fg="red")
+    )
 
 
 @click.command()

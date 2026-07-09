@@ -10,49 +10,46 @@ from mind.common.utils import (
     local_time_to_utc_iso,
     utc_iso_to_warsaw_local,
 )
-from mind.config.settings import CLOCKIFY_PROJECT_ID, PROJECT_KEY, TASK_PROVIDER
-from mind.services.api import ClockifyAPI, JiraAPI
+from mind.config.settings import CLOCKIFY_PROJECT_ID, PROJECT_KEY
+from mind.services.api import ClockifyAPI
+from mind.services.providers import TaskResolver
 
 
 class TimeLogService:
     """
     Service for logging time entries to Clockify.
-    Fetches task/label data from Jira and creates a time entry in Clockify.
+    Resolves task/label data through the active task provider and creates a time entry.
     """
 
     def __init__(self) -> None:
-        """Initialize the service with console, Clockify and Jira API clients."""
+        """Initialize the service with console and Clockify API client."""
         self.console = Console()
         self.clockify = ClockifyAPI()
-        self.jira = JiraAPI()
 
     def log_time(
         self, issue_key: str, time_period: str, date: dt_date, force: bool = False
     ) -> None:
         """
-        Log time for a given issue and time period on the given date.
-        Supports only Jira (TASK_PROVIDER='jira'). Trello is not yet supported.
+        Log time for a given issue/identifier and time period on the given date.
+        The task description is resolved by the active provider (favorites > explicit text > provider).
         Prevents duplicate entries for the same task and exact time range unless --force is used.
         """
-        if TASK_PROVIDER != "jira":
-            self.console.print(
-                "[yellow]⚠️ Only Jira is supported at the moment.[/yellow]"
-            )
-            return
-
         try:
             start_time, end_time = self._parse_time_period(time_period)
-            description, labels = self._build_description_and_labels(issue_key)
-            task = self._find_or_create_task(issue_key)
+            entry = TaskResolver().resolve(issue_key)
+            description, labels = entry.description, entry.labels
+            task_id = None
+            if entry.use_clockify_task:
+                task_id = self._find_or_create_task(entry.task_name)["id"]
             tag_ids = self._resolve_tag_ids(labels)
             payload = self._build_payload(
-                date, start_time, end_time, description, task["id"], tag_ids
+                date, start_time, end_time, description, task_id, tag_ids
             )
 
             day_entries = self._fetch_day_entries(date)
-            all_ranges = self._get_task_time_ranges(task["id"], description, day_entries)
+            all_ranges = self._get_task_time_ranges(task_id, description, day_entries)
             has_overlap = self._detect_overlap(
-                task["id"], date, start_time, end_time, description, day_entries
+                task_id, date, start_time, end_time, description, day_entries
             )
             if has_overlap and not force:
                 hours_str = ", ".join(all_ranges)
@@ -167,18 +164,6 @@ class TimeLogService:
         hour = int(parts[0])
         minute = int(parts[1]) if len(parts) > 1 else 0
         return f"{hour:02d}:{minute:02d}"
-
-    def _build_description_and_labels(self, issue_key: str) -> tuple[str, list[str]]:
-        """Fetch Jira issue data and build the Clockify entry description and label list."""
-        issue = self.jira.get_issue(issue_key, ["summary", "labels", "issuetype"])
-        fields = issue.get("fields", {})
-        summary = fields.get("summary", "")
-        labels = fields.get("labels", [])
-        issue_type = fields.get("issuetype", {}).get("name")
-        description = f"[{issue_key}] {summary}"
-        if issue_type:
-            labels = [*labels, issue_type]
-        return description, labels
 
     def _resolve_tag_ids(self, tag_names: list[str]) -> list[str]:
         """Resolve Clockify tag names to their IDs."""

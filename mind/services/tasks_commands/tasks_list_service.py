@@ -4,32 +4,35 @@ Service for listing Jira tasks assigned to the current user.
 
 from rich.console import Console
 
-from mind.services.api import JiraAPI
+from mind.services.providers import ListingNotSupportedError, get_task_provider
 
 
 class TasksListService:
     """
-    Service for fetching and displaying Jira issues assigned to the current user.
+    Service for fetching and displaying tasks assigned to the current user.
     """
 
     def __init__(self) -> None:
-        """Initialize the service with console and Jira API client."""
+        """Initialize the service with console and the active task provider."""
         self.console = Console()
-        self.jira = JiraAPI()
+        self.provider = get_task_provider()
 
     def list_tasks(self, active_only: bool = False, project: str | None = None) -> None:
         """
-        Fetch and display Jira issues assigned to the current user.
+        Fetch and display tasks assigned to the current user.
 
         Args:
             active_only: If True, shows only tasks with status "In Progress" or "Code Review".
             project: Optional project key to filter (e.g. 'PEG').
         """
         try:
-            issues = self.jira.get_assigned_issues(
-                active_only=active_only, project=project
-            )
+            issues = self.provider.list_tasks(active_only=active_only, project=project)
             self._print_issues(issues, active_only, project)
+        except ListingNotSupportedError:
+            self.console.print(
+                "[yellow]📋 Task listing is only available for Jira "
+                "(set TASK_PROVIDER=jira).[/yellow]"
+            )
         except Exception as e:
             self.console.print(f"[red]❌ Error fetching tasks: {e}[/red]")
 
